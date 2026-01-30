@@ -35,7 +35,7 @@ impl PartialOrd for Lifetime {
             (&Local(a), &Local(b)) => b.cmp(&a),
             (&Return(_), &Local(_)) => Ordering::Greater,
             (&Local(_), &Return(_)) => Ordering::Less,
-            (&Return(ref a), &Return(ref b)) => match (a.len(), b.len()) {
+            (Return(a), Return(b)) => match (a.len(), b.len()) {
                 (0, 0) => Ordering::Equal,
                 (0, _) => Ordering::Less,
                 (_, 0) => Ordering::Greater,
@@ -47,7 +47,7 @@ impl PartialOrd for Lifetime {
             (&Local(_), &Argument(_)) => Ordering::Less,
             (&Return(_), &Argument(_)) => return None,
             (&Argument(_), &Return(_)) => return None,
-            (&Argument(ref a), &Argument(ref b)) => {
+            (Argument(a), Argument(b)) => {
                 return compare_argument_outlives(a, b);
             }
         })
@@ -131,7 +131,7 @@ pub(crate) fn compare_lifetimes(
             */
             return Err("Failed to unify lifetimes (perhaps use `clone`?)".into())
         }
-        (&Ok(ref l), &Ok(ref r)) => {
+        (Ok(l), Ok(r)) => {
             match l.partial_cmp(r) {
                 Some(Ordering::Greater) | Some(Ordering::Equal) => {
                     match *r {
@@ -207,7 +207,7 @@ pub(crate) fn compare_lifetimes(
                 }
                 None => {
                     match (l, r) {
-                        (&Lifetime::Argument(ref l), &Lifetime::Argument(ref r)) => {
+                        (Lifetime::Argument(l), Lifetime::Argument(r)) => {
                             // TODO: Report function name for other cases.
                             let func = nodes[nodes[r[0]].parent.unwrap()].name().unwrap();
                             return Err(format!(
@@ -217,7 +217,7 @@ pub(crate) fn compare_lifetimes(
                                 nodes[l[0]].name().expect("Expected name")
                             ));
                         }
-                        (&Lifetime::Argument(ref l), &Lifetime::Return(ref r)) => {
+                        (Lifetime::Argument(l), Lifetime::Return(r)) => {
                             if !r.is_empty() {
                                 return Err(format!(
                                     "Requires `{}: '{}`",
@@ -228,7 +228,7 @@ pub(crate) fn compare_lifetimes(
                                 unimplemented!();
                             }
                         }
-                        (&Lifetime::Return(ref l), &Lifetime::Return(ref r)) => {
+                        (Lifetime::Return(l), Lifetime::Return(r)) => {
                             if !l.is_empty() && !r.is_empty() {
                                 return Err(format!(
                                     "Requires `{}: '{}`",
@@ -239,7 +239,7 @@ pub(crate) fn compare_lifetimes(
                                 unimplemented!();
                             }
                         }
-                        (&Lifetime::Return(ref l), &Lifetime::Argument(ref r)) => {
+                        (Lifetime::Return(l), Lifetime::Argument(r)) => {
                             if l.is_empty() {
                                 let last = *r.last().expect("Expected argument index");
                                 return Err(format!(

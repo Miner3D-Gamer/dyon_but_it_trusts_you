@@ -161,25 +161,17 @@ pub(crate) fn run(
                             }
                             if let Some(decl) = nodes[parent].declaration {
                                 let arg = nodes[decl].children[j];
-                                match (&expr_type, &nodes[arg].ty) {
-                                    (&Some(ref ch_ty), &Some(ref arg_ty)) => {
-                                        if !arg_ty.goes_with(ch_ty) {
-                                            if !delay_errs.contains_key(&i) {
-                                                delay_errs.insert(
-                                                    i,
-                                                    nodes[i].source.wrap(format!(
-                                                        "Type mismatch (#100):\n\
-                                                        Expected `{}`, found `{}`",
-                                                        arg_ty.description(),
-                                                        ch_ty.description()
-                                                    )),
-                                                );
-                                            }
-                                            todo.push(i);
-                                            continue 'node;
-                                        }
+                                if let (Some(ch_ty), Some(arg_ty)) = (&expr_type, &nodes[arg].ty) {
+                                    if !arg_ty.goes_with(ch_ty) {
+                                        delay_errs.entry(i).or_insert_with(|| nodes[i].source.wrap(format!(
+                                                    "Type mismatch (#100):\n\
+                                                    Expected `{}`, found `{}`",
+                                                    arg_ty.description(),
+                                                    ch_ty.description()
+                                                )));
+                                        todo.push(i);
+                                        continue 'node;
                                     }
-                                    (&None, _) | (_, &None) => {}
                                 }
                             } else if let Some(ref alias) = nodes[parent].alias {
                                 use crate::ast::FnAlias;
@@ -191,45 +183,33 @@ pub(crate) fn run(
                                     .and_then(|map| map.get(nodes[parent].name().unwrap()))
                                 {
                                     let f = &prelude.list[f];
-                                    if let Some(ref ty) = expr_type {
-                                        if !f.tys[j].goes_with(ty) {
-                                            if !delay_errs.contains_key(&i) {
-                                                delay_errs.insert(
-                                                    i,
-                                                    nodes[i].source.wrap(format!(
+                                    if let Some(ref ty) = expr_type
+                                        && !f.tys[j].goes_with(ty) {
+                                            delay_errs.entry(i).or_insert_with(|| nodes[i].source.wrap(format!(
                                                         "Type mismatch (#150):\n\
                                                         Expected `{}`, found `{}`",
                                                         f.tys[j].description(),
                                                         ty.description()
-                                                    )),
-                                                );
-                                            }
+                                                    )));
                                             todo.push(i);
                                             continue 'node;
                                         }
-                                    }
                                 }
                             } else if let Some(&f) =
                                 prelude.functions.get(nodes[parent].name().unwrap())
                             {
                                 let f = &prelude.list[f];
-                                if let Some(ref ty) = expr_type {
-                                    if !f.tys[j].goes_with(ty) {
-                                        if !delay_errs.contains_key(&i) {
-                                            delay_errs.insert(
-                                                i,
-                                                nodes[i].source.wrap(format!(
+                                if let Some(ref ty) = expr_type
+                                    && !f.tys[j].goes_with(ty) {
+                                        delay_errs.entry(i).or_insert_with(|| nodes[i].source.wrap(format!(
                                                     "Type mismatch (#200):\n\
                                                     Expected `{}`, found `{}`",
                                                     f.tys[j].description(),
                                                     ty.description()
-                                                )),
-                                            );
-                                        }
+                                                )));
                                         todo.push(i);
                                         continue 'node;
                                     }
-                                }
                             }
                         }
                     }
@@ -240,11 +220,10 @@ pub(crate) fn run(
                         refine::declaration(i, decl, nodes, &mut todo, &mut this_ty)?;
 
                         // If the type has not been refined, fall back to default type signature.
-                        if this_ty.is_none() && nodes[i].ty.is_none() {
-                            if let Some(ref ty) = nodes[decl].ty {
+                        if this_ty.is_none() && nodes[i].ty.is_none()
+                            && let Some(ref ty) = nodes[decl].ty {
                                 this_ty = Some(ty.clone());
                             }
-                        }
                     } else if let Some(ref alias) = nodes[i].alias {
                         use crate::ast::FnAlias;
 
@@ -286,8 +265,8 @@ pub(crate) fn run(
                             todo.push(i);
                             continue 'node;
                         }
-                        if let Some(decl) = nodes[item].declaration {
-                            if let Some(ref ty) = nodes[decl].ty {
+                        if let Some(decl) = nodes[item].declaration
+                            && let Some(ref ty) = nodes[decl].ty {
                                 if let Some(ty) = ty.closure_ret_ty() {
                                     this_ty = Some(ty);
                                 } else {
@@ -298,7 +277,6 @@ pub(crate) fn run(
                                     )));
                                 }
                             }
-                        }
                     }
                 }
                 Kind::Assign => {
@@ -321,12 +299,12 @@ pub(crate) fn run(
                         continue 'node;
                     }
                     nodes[left].ty = match (&nodes[left].ty, &nodes[right].ty) {
-                        (&None, &Some(ref right_ty)) => {
+                        (&None, Some(right_ty)) => {
                             // Make assign return void since there is no more need for checking.
                             this_ty = Some(Type::Void);
                             Some(right_ty.clone())
                         }
-                        (&Some(ref left_ty), &Some(ref right_ty)) => {
+                        (Some(left_ty), Some(right_ty)) => {
                             if right_ty.goes_with(left_ty) {
                                 if !nodes[left].children.is_empty() {
                                     // Tell the item that it needs refinement.
@@ -335,11 +313,10 @@ pub(crate) fn run(
                                     // Tell all nodes that uses the item as declaration that
                                     // they need refinement.
                                     for j in it + 1..nodes.len() {
-                                        if let Some(decl) = nodes[j].declaration {
-                                            if decl == it {
+                                        if let Some(decl) = nodes[j].declaration
+                                            && decl == it {
                                                 todo.push(j)
                                             }
-                                        }
                                     }
                                 }
                                 this_ty = Some(Type::Void);
@@ -397,22 +374,19 @@ pub(crate) fn run(
                                 if this_ty.is_some() {
                                     // Change the type of left expression,
                                     // to get a more accurate type.
-                                    if let Some(parent) = nodes[i].parent {
-                                        if nodes[parent].kind == Kind::Left {
+                                    if let Some(parent) = nodes[i].parent
+                                        && nodes[parent].kind == Kind::Left {
                                             nodes[parent].ty = this_ty.clone();
                                         }
-                                    }
                                 }
                             }
                         }
-                    } else if let Some(parent) = nodes[i].parent {
-                        if nodes[parent].kind == Kind::Left {
-                            if let Some(ref ty) = nodes[parent].ty {
+                    } else if let Some(parent) = nodes[i].parent
+                        && nodes[parent].kind == Kind::Left
+                            && let Some(ref ty) = nodes[parent].ty {
                                 // Get type from assignment left expression.
                                 this_ty = Some(ty.clone());
                             }
-                        }
-                    }
                 }
                 Kind::Return
                 | Kind::Val
@@ -460,8 +434,8 @@ pub(crate) fn run(
                                 if nodes[p].ty.is_none() {
                                     // Infer return type of function.
                                     nodes[p].ty = Some(ty.clone());
-                                } else if let Some(ref fn_ty) = nodes[p].ty {
-                                    if !fn_ty.goes_with(&ty) {
+                                } else if let Some(ref fn_ty) = nodes[p].ty
+                                    && !fn_ty.goes_with(&ty) {
                                         return Err(nodes[ch].source.wrap(format!(
                                             "Type mismatch (#350):\n\
                                             Expected `{}`, found `{}`",
@@ -469,7 +443,6 @@ pub(crate) fn run(
                                             ty.description()
                                         )));
                                     }
-                                }
                                 break;
                             }
                         }
@@ -542,14 +515,13 @@ pub(crate) fn run(
                     }
 
                     let expr_type = nodes[ch].ty.as_ref().map(|ty| nodes[i].inner_type(ty));
-                    if let Some(ref ty) = expr_type {
-                        if !ty.goes_with(&Type::F64) {
+                    if let Some(ref ty) = expr_type
+                        && !ty.goes_with(&Type::F64) {
                             return Err(nodes[i].source.wrap(format!(
                                 "Type mismatch (#700):\nExpected `f64`, found `{}`",
                                 expr_type.as_ref().unwrap().description()
                             )));
                         }
-                    }
                     this_ty = expr_type;
                 }
                 Kind::If => {
@@ -614,8 +586,8 @@ pub(crate) fn run(
                 _ => {}
             }
             if this_ty.is_some() {
-                if let (&Some(ref old_ty), &Some(ref new_ty)) = (&nodes[i].ty, &this_ty) {
-                    if old_ty != new_ty {
+                if let (Some(old_ty), Some(new_ty)) = (&nodes[i].ty, &this_ty)
+                    && old_ty != new_ty {
                         // If type was refined, propagate changes to parent.
                         if let Some(parent) = nodes[i].parent {
                             // If the type of the parent is not set,
@@ -626,7 +598,6 @@ pub(crate) fn run(
                             }
                         }
                     }
-                }
                 nodes[i].ty = this_ty;
                 changed = true;
             } else {
@@ -663,17 +634,15 @@ pub(crate) fn run(
                 if let Some(ref ty) = nodes[i].ty {
                     // Check inferred type matches the one of the block.
                     // This is used by mathematical expressions where return type is inferred.
-                    if let Some(ch) = nodes[i].find_child_by_kind(nodes, Kind::Expr) {
-                        if let Some(ref ch_ty) = nodes[ch].ty {
-                            if !ty.goes_with(ch_ty) {
+                    if let Some(ch) = nodes[i].find_child_by_kind(nodes, Kind::Expr)
+                        && let Some(ref ch_ty) = nodes[ch].ty
+                            && !ty.goes_with(ch_ty) {
                                 return Err(nodes[ch].source.wrap(format!(
                                     "Type mismatch (#750):\nExpected `{}`, found `{}`",
                                     ty.description(),
                                     ch_ty.description()
                                 )));
                             }
-                        }
-                    }
 
                     // Check all return statements.
                     let mut found_return = false;
@@ -697,8 +666,8 @@ pub(crate) fn run(
             }
             #[cfg(all(not(target_family = "wasm"), feature = "threading"))]
             Kind::Go => {
-                if !nodes[i].children.is_empty() {
-                    if let Some(decl) = nodes[nodes[i].children[0]].declaration {
+                if !nodes[i].children.is_empty()
+                    && let Some(decl) = nodes[nodes[i].children[0]].declaration {
                         match nodes[decl].ty {
                             None | Some(Type::Void) => {
                                 return Err(nodes[i].source.wrap(format!(
@@ -709,7 +678,6 @@ pub(crate) fn run(
                             _ => {}
                         }
                     }
-                }
             }
             Kind::If => check_if(i, nodes)?,
             Kind::Assign => {
@@ -719,9 +687,9 @@ pub(crate) fn run(
                     Some(AssignOp::Add) | Some(AssignOp::Sub) => {
                         let left = nodes[i].find_child_by_kind(nodes, Kind::Left).unwrap();
                         let right = nodes[i].find_child_by_kind(nodes, Kind::Right).unwrap();
-                        if let Some(ref left_ty) = nodes[left].ty {
-                            if let Some(ref right_ty) = nodes[right].ty {
-                                if !left_ty.add_assign(right_ty) {
+                        if let Some(ref left_ty) = nodes[left].ty
+                            && let Some(ref right_ty) = nodes[right].ty
+                                && !left_ty.add_assign(right_ty) {
                                     return Err(nodes[i].source.wrap(format!(
                                         "Type mismatch (#1000):\n\
                                         Assignment operator can not be used with `{}` and `{}`",
@@ -729,8 +697,6 @@ pub(crate) fn run(
                                         right_ty.description()
                                     )));
                                 }
-                            }
-                        }
                     }
                     _ => {}
                 }
@@ -759,27 +725,25 @@ pub(crate) fn run(
                     if let Kind::Return = nodes[ch].kind {
                         continue;
                     };
-                    if let Some(ref ty) = nodes[ch].ty {
-                        if ty != &Type::Void && ty != &Type::Unreachable {
+                    if let Some(ref ty) = nodes[ch].ty
+                        && ty != &Type::Void && ty != &Type::Unreachable {
                             return Err(nodes[ch].source.wrap(format!(
                                 "Type mismatch (#1100):\nUnused result `{}`",
                                 ty.description()
                             )));
                         }
-                    }
                 }
             }
             Kind::Swizzle => {
                 if let Some(ch) = nodes[i].find_child_by_kind(nodes, Kind::Expr) {
                     let expr_type = nodes[ch].ty.as_ref().map(|ty| nodes[ch].inner_type(ty));
-                    if let Some(ref ty) = expr_type {
-                        if !ty.goes_with(&Type::Vec4) {
+                    if let Some(ref ty) = expr_type
+                        && !ty.goes_with(&Type::Vec4) {
                             return Err(nodes[ch].source.wrap(format!(
                                 "Type mismatch (#1200):\nExpected `vec4`, found `{}`",
                                 expr_type.as_ref().unwrap().description()
                             )));
                         }
-                    }
                 }
             }
             _ => {}
@@ -798,15 +762,14 @@ fn check_fn(
     for &ch in &nodes[n].children {
         match nodes[ch].kind {
             Kind::Return => {
-                if let Some(ref ret_ty) = nodes[ch].ty {
-                    if !ty.goes_with(ret_ty) {
+                if let Some(ref ret_ty) = nodes[ch].ty
+                    && !ty.goes_with(ret_ty) {
                         return Err(nodes[ch].source.wrap(format!(
                             "Type mismatch (#1200):\nExpected `{}`, found `{}`",
                             ty.description(),
                             ret_ty.description()
                         )));
                     }
-                }
                 *found_return = true;
             }
             Kind::ReturnVoid => {
@@ -820,26 +783,21 @@ fn check_fn(
                 *found_return = true;
             }
             Kind::Item => {
-                if nodes[ch].name().as_ref().map(|n| &***n == "return") == Some(true) {
-                    if let Some(parent) = nodes[ch].parent {
-                        if nodes[parent].kind == Kind::Left {
-                            if let Some(parent) = nodes[parent].parent {
-                                if nodes[parent].kind == Kind::Assign {
-                                    if let Some(ref ret_ty) = nodes[ch].ty {
-                                        if !ty.goes_with(ret_ty) {
+                if nodes[ch].name().as_ref().map(|n| &***n == "return") == Some(true)
+                    && let Some(parent) = nodes[ch].parent
+                        && nodes[parent].kind == Kind::Left
+                            && let Some(parent) = nodes[parent].parent
+                                && nodes[parent].kind == Kind::Assign {
+                                    if let Some(ref ret_ty) = nodes[ch].ty
+                                        && !ty.goes_with(ret_ty) {
                                             return Err(nodes[ch].source.wrap(format!(
                                                 "Type mismatch (#1250):\nExpected `{}`, found `{}`",
                                                 ty.description(),
                                                 ret_ty.description()
                                             )));
                                         }
-                                    }
                                     *found_return = true;
                                 }
-                            }
-                        }
-                    }
-                }
             }
             Kind::Closure => {
                 continue;
@@ -852,17 +810,15 @@ fn check_fn(
 }
 
 fn check_if(n: usize, nodes: &[Node]) -> Result<(), Range<String>> {
-    if let Some(ch) = nodes[n].find_child_by_kind(nodes, Kind::Cond) {
-        if let Some(ref cond_ty) = nodes[ch].ty {
-            if !Type::Bool.goes_with(cond_ty) {
+    if let Some(ch) = nodes[n].find_child_by_kind(nodes, Kind::Cond)
+        && let Some(ref cond_ty) = nodes[ch].ty
+            && !Type::Bool.goes_with(cond_ty) {
                 return Err(nodes[ch].source.wrap(format!(
                     "Type mismatch (#1400):\nExpected `{}`, found `{}`",
                     Type::Bool.description(),
                     cond_ty.description()
                 )));
             }
-        }
-    }
 
     // The type of ifs are inferred from the true block.
     let true_type = match nodes[n].ty {
@@ -872,39 +828,34 @@ fn check_if(n: usize, nodes: &[Node]) -> Result<(), Range<String>> {
 
     for &ch in &nodes[n].children {
         if let Kind::ElseIfCond = nodes[ch].kind {
-            if let Some(ref cond_ty) = nodes[ch].ty {
-                if !Type::Bool.goes_with(cond_ty) {
+            if let Some(ref cond_ty) = nodes[ch].ty
+                && !Type::Bool.goes_with(cond_ty) {
                     return Err(nodes[ch].source.wrap(format!(
                         "Type mismatch (#1500):\nExpected `{}`, found `{}`",
                         Type::Bool.description(),
                         cond_ty.description()
                     )));
                 }
-            }
-        } else if let Kind::ElseIfBlock = nodes[ch].kind {
-            if let Some(ref else_if_type) = nodes[ch].ty {
-                if !else_if_type.goes_with(true_type) {
+        } else if let Kind::ElseIfBlock = nodes[ch].kind
+            && let Some(ref else_if_type) = nodes[ch].ty
+                && !else_if_type.goes_with(true_type) {
                     return Err(nodes[ch].source.wrap(format!(
                         "Type mismatch (#1600):\nExpected `{}`, found `{}`",
                         true_type.description(),
                         else_if_type.description()
                     )));
                 }
-            }
-        }
     }
 
-    if let Some(eb) = nodes[n].find_child_by_kind(nodes, Kind::ElseBlock) {
-        if let Some(ref else_type) = nodes[eb].ty {
-            if !else_type.goes_with(true_type) {
+    if let Some(eb) = nodes[n].find_child_by_kind(nodes, Kind::ElseBlock)
+        && let Some(ref else_type) = nodes[eb].ty
+            && !else_type.goes_with(true_type) {
                 return Err(nodes[eb].source.wrap(format!(
                     "Type mismatch (#1700):\nExpected `{}`, found `{}`",
                     true_type.description(),
                     else_type.description()
                 )));
             }
-        }
-    }
 
     Ok(())
 }

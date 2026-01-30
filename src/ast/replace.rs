@@ -124,8 +124,8 @@ pub fn number(expr: &Expression, name: &Arc<String>, val: f64) -> Expression {
             let mut init: Option<Expression> = None;
             if let Expression::Assign(ref assign_expr) = for_expr.init {
                 // Check for declaration of same name.
-                if let Expression::Item(ref item) = assign_expr.left {
-                    if &item.name == name {
+                if let Expression::Item(ref item) = assign_expr.left
+                    && &item.name == name {
                         init = Some(Expression::Assign(Box::new(Assign {
                             op: assign_expr.op,
                             left: assign_expr.left.clone(),
@@ -133,7 +133,6 @@ pub fn number(expr: &Expression, name: &Arc<String>, val: f64) -> Expression {
                             source_range: assign_expr.source_range,
                         })));
                     }
-                }
             }
             if let Some(init) = init {
                 E::For(Box::new(For {
@@ -330,8 +329,8 @@ fn number_block(block: &Block, name: &Arc<String>, val: f64) -> Block {
         } else {
             if let Expression::Assign(ref assign_expr) = *expr {
                 // Check for declaration of same name.
-                if let Expression::Item(ref item) = assign_expr.left {
-                    if &item.name == name {
+                if let Expression::Item(ref item) = assign_expr.left
+                    && &item.name == name {
                         new_expressions.push(Expression::Assign(Box::new(Assign {
                             op: assign_expr.op,
                             left: assign_expr.left.clone(),
@@ -341,7 +340,6 @@ fn number_block(block: &Block, name: &Arc<String>, val: f64) -> Block {
                         just_clone = true;
                         continue;
                     }
-                }
             }
             new_expressions.push(number(expr, name, val));
         }

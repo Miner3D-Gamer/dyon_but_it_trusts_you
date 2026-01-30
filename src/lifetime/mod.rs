@@ -233,11 +233,10 @@ pub(crate) fn check_core(
             if n.kind != Kind::Expr {
                 return false;
             }
-            if let Some(parent) = n.parent {
-                if nodes[parent].kind != Kind::Fn && nodes[parent].kind != Kind::Closure {
+            if let Some(parent) = n.parent
+                && nodes[parent].kind != Kind::Fn && nodes[parent].kind != Kind::Closure {
                     return false;
                 }
-            }
             true
         })
         .map(|(i, _)| i)
@@ -567,32 +566,28 @@ pub(crate) fn check_core(
                                     while nodes[nodes[f].children[arg]].kind != Kind::Arg {
                                         arg += 1;
                                     }
-                                    if arg < n {
-                                        if let Some(ref arg_ty) = nodes[nodes[f].children[arg]].ty {
-                                            if !arg_ty.goes_with(ty_arg_ty) {
+                                    if arg < n
+                                        && let Some(ref arg_ty) = nodes[nodes[f].children[arg]].ty
+                                            && !arg_ty.goes_with(ty_arg_ty) {
                                                 return Err(nodes[ty_ch].source.wrap(format!(
                                                     "The type `{}` does not work with `{}`",
                                                     ty_arg_ty.description(),
                                                     arg_ty.description()
                                                 )));
                                             }
-                                        }
-                                    }
                                 }
                                 arg += 1;
                             }
                             count += 1;
-                        } else if nodes[ty_ch].kind == Kind::TyRet {
-                            if let Some(ref ty_ret) = nodes[ty_ch].ty {
-                                if !ret_type.goes_with(ty_ret) {
+                        } else if nodes[ty_ch].kind == Kind::TyRet
+                            && let Some(ref ty_ret) = nodes[ty_ch].ty
+                                && !ret_type.goes_with(ty_ret) {
                                     return Err(nodes[ty_ch].source.wrap(format!(
                                         "The type `{}` does not work with `{}`",
                                         ty_ret.description(),
                                         ret_type.description()
                                     )));
                                 }
-                            }
-                        }
                     }
                     if count != n {
                         return Err(nodes[ch].source.wrap(format!(
@@ -689,7 +684,7 @@ pub(crate) fn check_core(
                     }
                     continue;
                 }
-                let suggestions = suggestions(&**name, &function_lookup, prelude);
+                let suggestions = suggestions(&name, &function_lookup, prelude);
                 return Err(node
                     .source
                     .wrap(format!("Could not find function `{}`{}", name, suggestions)));
@@ -697,7 +692,7 @@ pub(crate) fn check_core(
         };
         // Check that number of arguments is the same as in declaration.
         if function_args[i] != n {
-            let suggestions = suggestions(&**name, &function_lookup, prelude);
+            let suggestions = suggestions(&name, &function_lookup, prelude);
             return Err(node.source.wrap(format!(
                 "{}: Expected {} arguments, found {}{}",
                 name, function_args[i], n, suggestions
@@ -733,7 +728,7 @@ pub(crate) fn check_core(
                 if prelude.functions.get(&name).is_some() {
                     continue;
                 };
-                let suggestions = suggestions(&**name, &function_lookup, prelude);
+                let suggestions = suggestions(&name, &function_lookup, prelude);
                 return Err(node
                     .source
                     .wrap(format!("Could not find function `{}`{}", name, suggestions)));
@@ -774,20 +769,18 @@ pub(crate) fn check_core(
 
         // Check for cyclic references among lifetimes.
         let mut visited = vec![false; function_args[i]];
-        for (_, &c) in function
+        for &c in function
             .children
             .iter()
             .filter(|&&c| nodes[c].kind == Kind::Arg)
-            .enumerate()
+            
         {
             if let Some(ref lt) = nodes[c].lifetime {
                 if &**lt == "return" {
                     break;
                 }
                 // Reset visit flags.
-                for it in &mut visited {
-                    *it = false;
-                }
+                visited.fill(false);
 
                 let (mut arg, mut ind) = *arg_names
                     .get(&(f, lt.clone()))
@@ -873,15 +866,14 @@ pub(crate) fn check_core(
                 .iter()
                 .filter(|&&i| nodes[i].kind == Kind::Arg)
             {
-                if let Some(ref lt) = nodes[j].lifetime {
-                    if &**lt == "return" {
+                if let Some(ref lt) = nodes[j].lifetime
+                    && &**lt == "return" {
                         let name = nodes[j].name().expect("Expected name");
                         return Err(nodes[j].source.wrap(format!(
                             "`{}: 'return` , but function does not return",
                             name
                         )));
                     }
-                }
             }
         }
     }
@@ -1092,15 +1084,14 @@ pub(crate) fn check_core(
 
     // Check that mutable locals are not immutable arguments.
     for &(_, i) in &mutated_locals {
-        if let Some(decl) = nodes[i].declaration {
-            if (nodes[decl].kind == Kind::Arg || nodes[decl].kind == Kind::Current)
+        if let Some(decl) = nodes[i].declaration
+            && (nodes[decl].kind == Kind::Arg || nodes[decl].kind == Kind::Current)
                 && !nodes[decl].mutable
             {
                 return Err(nodes[i]
                     .source
                     .wrap(format!("Requires `mut {}`", nodes[i].name().unwrap())));
             }
-        }
     }
 
     // Check that calling mutable argument are not immutable.
@@ -1127,17 +1118,15 @@ pub(crate) fn check_core(
             .iter()
             .filter(|&&n| nodes[n].kind == Kind::CallArg && nodes[n].mutable)
         {
-            if let Some(n) = reference(arg) {
-                if let Some(decl) = nodes[n].declaration {
-                    if (nodes[decl].kind == Kind::Arg || nodes[decl].kind == Kind::Current)
+            if let Some(n) = reference(arg)
+                && let Some(decl) = nodes[n].declaration
+                    && (nodes[decl].kind == Kind::Arg || nodes[decl].kind == Kind::Current)
                         && !nodes[decl].mutable
                     {
                         return Err(nodes[n]
                             .source
                             .wrap(format!("Requires `mut {}`", nodes[n].name().unwrap())));
                     }
-                }
-            }
         }
     }
 
@@ -1170,7 +1159,7 @@ fn suggestions(
     let mut found_suggestions = false;
     let mut suggestions = String::from("\n\nDid you mean:\n");
     for f in function_lookup.keys() {
-        if (&***f).starts_with(search_name) {
+        if f.starts_with(search_name) {
             suggestions.push_str("- ");
             suggestions.push_str(f);
             suggestions.push('\n');
@@ -1178,7 +1167,7 @@ fn suggestions(
         }
     }
     for f in prelude.functions.keys() {
-        if (&***f).starts_with(search_name) {
+        if f.starts_with(search_name) {
             suggestions.push_str("- ");
             suggestions.push_str(f);
             suggestions.push('\n');

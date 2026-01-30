@@ -1,23 +1,13 @@
 //! Dyon runtime.
 
+use std::{cell::Cell, collections::HashMap, sync::Arc};
+
 #[cfg(feature = "rand")]
 #[cfg(not(target_family = "wasm"))]
 use rand;
 use range::Range;
-use std::cell::Cell;
-use std::collections::HashMap;
-use std::sync::Arc;
 
-use crate::{
-    ast,
-    embed,
-    FnIndex,
-    Module,
-    UnsafeRef,
-    Variable,
-    TINVOTS,
-    CSIE,
-};
+use crate::{CSIE, FnIndex, Module, TINVOTS, UnsafeRef, Variable, ast, embed};
 
 #[cfg(all(not(target_family = "wasm"), feature = "threading"))]
 mod for_in;
@@ -50,16 +40,18 @@ pub enum Flow {
 /// Stores function calls.
 #[derive(Debug)]
 pub struct Call {
-    // was .0
-    fn_name: Arc<String>,
+    /// was .0
+    pub fn_name: Arc<String>,
     /// The index of the relative function in module.
     pub(crate) index: usize,
-    file: Option<Arc<String>>,
-    // was .1
-    stack_len: usize,
-    // was .2
-    local_len: usize,
-    current_len: usize,
+    /// ???
+    pub file: Option<Arc<String>>,
+    /// was .1
+    pub stack_len: usize,
+    /// was .2
+    pub local_len: usize,
+    /// ???
+    pub current_len: usize,
 }
 
 lazy_static! {
@@ -72,13 +64,16 @@ lazy_static! {
     pub(crate) static ref OBJECT_TYPE: Arc<String> = Arc::new("object".into());
     pub(crate) static ref LINK_TYPE: Arc<String> = Arc::new("link".into());
     pub(crate) static ref ARRAY_TYPE: Arc<String> = Arc::new("array".into());
-    pub(crate) static ref UNSAFE_REF_TYPE: Arc<String> = Arc::new("unsafe_ref".into());
+    pub(crate) static ref UNSAFE_REF_TYPE: Arc<String> =
+        Arc::new("unsafe_ref".into());
     pub(crate) static ref REF_TYPE: Arc<String> = Arc::new("ref".into());
-    pub(crate) static ref RUST_OBJECT_TYPE: Arc<String> = Arc::new("rust_object".into());
+    pub(crate) static ref RUST_OBJECT_TYPE: Arc<String> =
+        Arc::new("rust_object".into());
     pub(crate) static ref OPTION_TYPE: Arc<String> = Arc::new("option".into());
     pub(crate) static ref RESULT_TYPE: Arc<String> = Arc::new("result".into());
     pub(crate) static ref THREAD_TYPE: Arc<String> = Arc::new("thread".into());
-    pub(crate) static ref CLOSURE_TYPE: Arc<String> = Arc::new("closure".into());
+    pub(crate) static ref CLOSURE_TYPE: Arc<String> =
+        Arc::new("closure".into());
     pub(crate) static ref IN_TYPE: Arc<String> = Arc::new("in".into());
     pub(crate) static ref MAIN: Arc<String> = Arc::new("main".into());
 }
@@ -86,11 +81,10 @@ lazy_static! {
 #[cfg(feature = "dynload")]
 fn file_lookup_module(source: &str, target: &mut String) -> Result<(), String> {
     if cfg!(feature = "file") {
-        use std::fs::File;
-        use std::io::Read;
+        use std::{fs::File, io::Read};
 
-        let mut data_file =
-            File::open(source).map_err(|err| format!("Could not open `{}`, {}", source, err))?;
+        let mut data_file = File::open(source)
+            .map_err(|err| format!("Could not open `{}`, {}", source, err))?;
         data_file.read_to_string(target).unwrap();
         Ok(())
     } else {
@@ -120,7 +114,8 @@ pub struct Runtime {
     pub(crate) rng: rand::rngs::StdRng,
     /// The module lookup instance
     #[cfg(feature = "dynload")]
-    pub module_lookup: fn(source: &str, target: &mut String) -> Result<(), String>,
+    pub module_lookup:
+        fn(source: &str, target: &mut String) -> Result<(), String>,
     /// External functions can choose to report an error on an argument.
     pub arg_err_index: Cell<Option<usize>>,
     /// Tokio runtime handle.
@@ -146,11 +141,12 @@ fn item_lookup(
     insert: bool, // Whether to insert key in object.
     last: bool,   // Whether it is the last property.
 ) -> Result<*mut Variable, String> {
-    use ast::Id;
     use std::collections::hash_map::Entry;
-    use Variable::*;
 
-    match unsafe {var.as_mut().unwrap()} {
+    use Variable::*;
+    use ast::Id;
+
+    match unsafe { var.as_mut().unwrap() } {
         Object(obj) => {
             let id = match *prop {
                 Id::String(_, ref id) => id.clone(),
@@ -170,18 +166,24 @@ fn item_lookup(
                         _ => {
                             return Err(module.error_fnindex(
                                 prop.source_range(),
-                                &format!("{}\nExpected string", stack_trace(call_stack)),
+                                &format!(
+                                    "{}\nExpected string",
+                                    stack_trace(call_stack)
+                                ),
                                 call_stack.last().expect(CSIE).index,
-                            ))
+                            ));
                         }
                     }
                 }
                 Id::F64(range, _) => {
                     return Err(module.error_fnindex(
                         range,
-                        &format!("{}\nExpected string", stack_trace(call_stack)),
+                        &format!(
+                            "{}\nExpected string",
+                            stack_trace(call_stack)
+                        ),
                         call_stack.last().expect(CSIE).index,
-                    ))
+                    ));
                 }
             };
             let v = match Arc::make_mut(obj).entry(id.clone()) {
@@ -192,7 +194,11 @@ fn item_lookup(
                     } else {
                         return Err(module.error_fnindex(
                             prop.source_range(),
-                            &format!("{}\nObject has no key `{}`", stack_trace(call_stack), id),
+                            &format!(
+                                "{}\nObject has no key `{}`",
+                                stack_trace(call_stack),
+                                id
+                            ),
                             call_stack.last().expect(CSIE).index,
                         ));
                     }
@@ -241,7 +247,8 @@ fn item_lookup(
                             // `[0, 1]` are indices to look up `b` in `[[a, b], [c, d]]`.
                             //   ^  ^---- to `b` in `[a, b]`.
                             //   \---- points to first array `[a, b]`.
-                            let mut arr: *mut Vec<Variable> = Arc::make_mut(arr);
+                            let mut arr: *mut Vec<Variable> =
+                                Arc::make_mut(arr);
                             let n = indices.len();
                             for (i, ind) in indices.iter().enumerate() {
                                 let id: f64 = match ind {
@@ -257,7 +264,9 @@ fn item_lookup(
                                 };
                                 // Make it explicit `&mut (*arr)` to use
                                 // dangerous implicit autoref.
-                                let v = match unsafe {arr.as_mut().unwrap().get_mut(id as usize)} {
+                                let v = match unsafe {
+                                    arr.as_mut().unwrap().get_mut(id as usize)
+                                } {
                                     None => {
                                         return Err(module.error_fnindex(
                                             prop.source_range(),
@@ -266,8 +275,11 @@ fn item_lookup(
                                                 stack_trace(call_stack),
                                                 id
                                             ),
-                                            call_stack.last().expect(CSIE).index,
-                                        ))
+                                            call_stack
+                                                .last()
+                                                .expect(CSIE)
+                                                .index,
+                                        ));
                                     }
                                     Some(x) => x,
                                 };
@@ -290,7 +302,8 @@ fn item_lookup(
                                         arr = Arc::make_mut(new_arr);
                                     }
                                     Ref(x) => {
-                                        if let Array(ref mut new_arr) = prev_stack[x]
+                                        if let Array(ref mut new_arr) =
+                                            prev_stack[x]
                                         {
                                             arr = Arc::make_mut(new_arr);
                                         } else {
@@ -312,27 +325,37 @@ fn item_lookup(
                         _ => {
                             return Err(module.error_fnindex(
                                 prop.source_range(),
-                                &format!("{}\nExpected number", stack_trace(call_stack)),
+                                &format!(
+                                    "{}\nExpected number",
+                                    stack_trace(call_stack)
+                                ),
                                 call_stack.last().expect(CSIE).index,
-                            ))
+                            ));
                         }
                     }
                 }
                 Id::String(range, _) => {
                     return Err(module.error_fnindex(
                         range,
-                        &format!("{}\nExpected number", stack_trace(call_stack)),
+                        &format!(
+                            "{}\nExpected number",
+                            stack_trace(call_stack)
+                        ),
                         call_stack.last().expect(CSIE).index,
-                    ))
+                    ));
                 }
             };
             let v = match Arc::make_mut(arr).get_mut(id as usize) {
                 None => {
                     return Err(module.error_fnindex(
                         prop.source_range(),
-                        &format!("{}\nOut of bounds `{}`", stack_trace(call_stack), id),
+                        &format!(
+                            "{}\nOut of bounds `{}`",
+                            stack_trace(call_stack),
+                            id
+                        ),
                         call_stack.last().expect(CSIE).index,
-                    ))
+                    ));
                 }
                 Some(x) => x,
             };
@@ -403,13 +426,16 @@ impl Runtime {
     pub fn pop_mat4<T: embed::ConvertMat4>(&mut self) -> Result<T, String> {
         let v = self.stack.pop().unwrap_or_else(|| panic!("{}", TINVOTS));
         match self.get(&v) {
-            &Variable::Mat4(ref val) => Ok(T::from(**val)),
+            Variable::Mat4(val) => Ok(T::from(**val)),
             x => Err(self.expected(x, "mat4")),
         }
     }
 
     /// Gets variable.
-    pub fn var<T: embed::PopVariable>(&self, var: &Variable) -> Result<T, String> {
+    pub fn var<T: embed::PopVariable>(
+        &self,
+        var: &Variable,
+    ) -> Result<T, String> {
         T::pop_var(self, self.get(var))
     }
 
@@ -435,7 +461,10 @@ impl Runtime {
     ///     Ok(())
     /// }
     /// ```
-    pub fn current_object<T: embed::PopVariable>(&self, name: &str) -> Result<T, String> {
+    pub fn current_object<T: embed::PopVariable>(
+        &self,
+        name: &str,
+    ) -> Result<T, String> {
         let current_object_index = self
             .current_stack
             .iter()
@@ -448,7 +477,10 @@ impl Runtime {
     }
 
     /// Gets 4D vector.
-    pub fn var_vec4<T: embed::ConvertVec4>(&self, var: &Variable) -> Result<T, String> {
+    pub fn var_vec4<T: embed::ConvertVec4>(
+        &self,
+        var: &Variable,
+    ) -> Result<T, String> {
         match self.get(var) {
             &Variable::Vec4(val) => Ok(T::from(val)),
             x => Err(self.expected(x, "vec4")),
@@ -456,16 +488,21 @@ impl Runtime {
     }
 
     /// Gets 4D matrix.
-    pub fn var_mat4<T: embed::ConvertMat4>(&self, var: &Variable) -> Result<T, String> {
+    pub fn var_mat4<T: embed::ConvertMat4>(
+        &self,
+        var: &Variable,
+    ) -> Result<T, String> {
         match self.get(var) {
-            &Variable::Mat4(ref val) => Ok(T::from(**val)),
+            Variable::Mat4(val) => Ok(T::from(**val)),
             x => Err(self.expected(x, "mat4")),
         }
     }
 
     /// Push value to stack.
     #[inline(always)]
-    pub fn push<T: embed::PushVariable>(&mut self, val: T) {self.stack.push(val.push_var())}
+    pub fn push<T: embed::PushVariable>(&mut self, val: T) {
+        self.stack.push(val.push_var())
+    }
 
     /// Push Vec4 to stack.
     pub fn push_vec4<T: embed::ConvertVec4>(&mut self, val: T) {
@@ -480,8 +517,10 @@ impl Runtime {
     /// Pushes Rust object to stack.
     pub fn push_rust<T: 'static>(&mut self, val: T) {
         use std::sync::Mutex;
+
         use crate::RustObject;
-        self.stack.push(Variable::RustObject(Arc::new(Mutex::new(val)) as RustObject))
+        self.stack
+            .push(Variable::RustObject(Arc::new(Mutex::new(val)) as RustObject))
     }
 
     /// Generates error message that a certain type was expected for argument.
@@ -507,7 +546,11 @@ impl Runtime {
     /// Looks up a variable reference if any, getting a pointer to the variable on the stack.
     #[inline(always)]
     pub fn get<'a>(&'a self, var: &'a Variable) -> &'a Variable {
-        if let Variable::Ref(ind) = var {&self.stack[*ind]} else {var}
+        if let Variable::Ref(ind) = var {
+            &self.stack[*ind]
+        } else {
+            var
+        }
     }
 
     #[inline(always)]
@@ -563,12 +606,18 @@ impl Runtime {
     }
 
     fn err(&self, range: Range, msg: &str) -> FlowResult {
-        Err(self
-            .module
-            .error(range, &format!("{}\n{}", self.stack_trace(), msg), self))
+        Err(self.module.error(
+            range,
+            &format!("{}\n{}", self.stack_trace(), msg),
+            self,
+        ))
     }
 
-    pub(crate) fn expression(&mut self, expr: &ast::Expression, side: Side) -> FlowResult {
+    pub(crate) fn expression(
+        &mut self,
+        expr: &ast::Expression,
+        side: Side,
+    ) -> FlowResult {
         use crate::ast::Expression::*;
 
         match *expr {
@@ -583,7 +632,10 @@ impl Runtime {
                     (x, Flow::Return) => {
                         return Ok((x, Flow::Return));
                     }
-                    _ => return self.err(expr.source_range(), "Expected something"),
+                    _ => {
+                        return self
+                            .err(expr.source_range(), "Expected something");
+                    }
                 };
                 Ok((Some(x), Flow::Return))
             }
@@ -592,17 +644,30 @@ impl Runtime {
             Continue(ref b) => Ok((None, Flow::ContinueLoop(b.label.clone()))),
             #[cfg(all(not(target_family = "wasm"), feature = "threading"))]
             Go(ref go) => self.go(go),
-            #[cfg(not(all(not(target_family = "wasm"), feature = "threading")))]
+            #[cfg(not(all(
+                not(target_family = "wasm"),
+                feature = "threading"
+            )))]
             Go(ref go) => match **go {},
             Call(ref call) => {
                 let loader = false;
                 self.call_internal(call, loader)
             }
-            CallVoid(ref call) => self.call_void(&call.args, call.fun, &call.info),
-            CallReturn(ref call) => self.call_return(&call.args, call.fun, &call.info),
-            CallBinOp(ref call) => self.call_binop(&call.left, &call.right, call.fun, &call.info),
-            CallUnOp(ref call) => self.call_unop(&call.arg, call.fun, &call.info),
-            CallLazy(ref call) => self.call_lazy(&call.args, call.fun, call.lazy_inv, &call.info),
+            CallVoid(ref call) => {
+                self.call_void(&call.args, call.fun, &call.info)
+            }
+            CallReturn(ref call) => {
+                self.call_return(&call.args, call.fun, &call.info)
+            }
+            CallBinOp(ref call) => {
+                self.call_binop(&call.left, &call.right, call.fun, &call.info)
+            }
+            CallUnOp(ref call) => {
+                self.call_unop(&call.arg, call.fun, &call.info)
+            }
+            CallLazy(ref call) => {
+                self.call_lazy(&call.args, call.fun, call.lazy_inv, &call.info)
+            }
             CallLoaded(ref call) => {
                 let loader = false;
                 self.call_loaded(
@@ -614,23 +679,28 @@ impl Runtime {
                 )
             }
             Item(ref item) => self.item(item, side),
-            Assign(ref assign) => self.assign(assign.op, &assign.left, &assign.right),
+            Assign(ref assign) => {
+                self.assign(assign.op, &assign.left, &assign.right)
+            }
             Vec4(ref vec4) => self.vec4(vec4, side),
             Mat4(ref mat4) => self.mat4(mat4, side),
             For(ref for_expr) => self.for_expr(for_expr),
             ForN(ref for_n_expr) => self.for_n_expr(for_n_expr),
             #[cfg(all(not(target_family = "wasm"), feature = "threading"))]
             ForIn(ref for_in_expr) => self.for_in_expr(for_in_expr),
-            #[cfg(not(all(not(target_family = "wasm"), feature = "threading")))]
-            ForIn(ref for_in_expr) |
-            SumIn(ref for_in_expr) |
-            ProdIn(ref for_in_expr) |
-            MinIn(ref for_in_expr) |
-            MaxIn(ref for_in_expr) |
-            SiftIn(ref for_in_expr) |
-            AnyIn(ref for_in_expr) |
-            AllIn(ref for_in_expr) |
-            LinkIn(ref for_in_expr) => match **for_in_expr {},
+            #[cfg(not(all(
+                not(target_family = "wasm"),
+                feature = "threading"
+            )))]
+            ForIn(ref for_in_expr)
+            | SumIn(ref for_in_expr)
+            | ProdIn(ref for_in_expr)
+            | MinIn(ref for_in_expr)
+            | MaxIn(ref for_in_expr)
+            | SiftIn(ref for_in_expr)
+            | AnyIn(ref for_in_expr)
+            | AllIn(ref for_in_expr)
+            | LinkIn(ref for_in_expr) => match **for_in_expr {},
             Sum(ref for_n_expr) => self.sum_n_expr(for_n_expr),
             #[cfg(all(not(target_family = "wasm"), feature = "threading"))]
             SumIn(ref sum_in_expr) => self.sum_in_expr(sum_in_expr),
@@ -658,7 +728,9 @@ impl Runtime {
             #[cfg(all(not(target_family = "wasm"), feature = "threading"))]
             LinkIn(ref for_in_expr) => self.link_for_in_expr(for_in_expr),
             If(ref if_expr) => self.if_expr(if_expr),
-            Variable(ref range_var) => Ok((Some(range_var.1.clone()), Flow::Continue)),
+            Variable(ref range_var) => {
+                Ok((Some(range_var.1.clone()), Flow::Continue))
+            }
             Try(ref expr) => self.try_fun(expr, side),
             Swizzle(ref sw) => {
                 let flow = self.swizzle(sw)?;
@@ -673,20 +745,22 @@ impl Runtime {
             TryExpr(ref try_expr) => self.try_expr(try_expr),
             #[cfg(all(not(target_family = "wasm"), feature = "threading"))]
             In(ref in_expr) => self.in_expr(in_expr),
-            #[cfg(not(all(not(target_family = "wasm"), feature = "threading")))]
+            #[cfg(not(all(
+                not(target_family = "wasm"),
+                feature = "threading"
+            )))]
             In(ref in_expr) => match **in_expr {},
         }
     }
 
     #[cfg(all(not(target_family = "wasm"), feature = "threading"))]
     fn in_expr(&mut self, in_expr: &ast::In) -> FlowResult {
-        use std::sync::atomic::Ordering;
-        use std::sync::mpsc::channel;
-        use std::sync::Mutex;
+        use std::sync::{Mutex, atomic::Ordering, mpsc::channel};
 
         match in_expr.f_index.get() {
             FnIndex::Loaded(f_index) => {
-                let relative = self.call_stack.last().map(|c| c.index).unwrap_or(0);
+                let relative =
+                    self.call_stack.last().map(|c| c.index).unwrap_or(0);
                 let new_index = (f_index + relative as isize) as usize;
                 let f = &self.module.functions[new_index];
                 let (tx, rx) = channel();
@@ -715,7 +789,9 @@ impl Runtime {
             Ok((Some(x), Flow::Continue)) => {
                 Ok((Some(Variable::Result(Ok(Box::new(x)))), Flow::Continue))
             }
-            Ok((None, Flow::Continue)) => self.err(try_expr.source_range, "Expected something"),
+            Ok((None, Flow::Continue)) => {
+                self.err(try_expr.source_range, "Expected something")
+            }
             Ok((x, flow)) => Ok((x, flow)),
             Err(err) => {
                 self.call_stack.truncate(cs);
@@ -734,19 +810,25 @@ impl Runtime {
     }
 
     fn closure(&mut self, closure: &ast::Closure) -> FlowResult {
-        use crate::grab::{self, Grabbed};
-        use crate::ClosureEnvironment;
+        use crate::{
+            ClosureEnvironment,
+            grab::{self, Grabbed},
+        };
 
         // Create closure.
         let relative = self.call_stack.last().map(|c| c.index).unwrap_or(0);
         // Evaluate `grab` expressions and generate new AST.
-        let new_expr = match grab::grab_expr(1, self, &closure.expr, Side::Right)? {
-            (Grabbed::Expression(x), Flow::Continue) => x,
-            (Grabbed::Variable(x), Flow::Return) => {
-                return Ok((x, Flow::Return));
-            }
-            _ => return self.err(closure.expr.source_range(), "Expected something"),
-        };
+        let new_expr =
+            match grab::grab_expr(1, self, &closure.expr, Side::Right)? {
+                (Grabbed::Expression(x), Flow::Continue) => x,
+                (Grabbed::Variable(x), Flow::Return) => {
+                    return Ok((x, Flow::Return));
+                }
+                _ => {
+                    return self
+                        .err(closure.expr.source_range(), "Expected something");
+                }
+            };
 
         Ok((
             Some(crate::Variable::Closure(
@@ -768,7 +850,9 @@ impl Runtime {
         ))
     }
 
-    fn try_msg(v: &Variable) -> Option<Result<Box<Variable>, Box<crate::Error>>> {
+    fn try_msg(
+        v: &Variable,
+    ) -> Option<Result<Box<Variable>, Box<crate::Error>>> {
         use crate::Error;
 
         Some(match *v {
@@ -776,25 +860,31 @@ impl Runtime {
             Variable::Option(ref opt) => match *opt {
                 Some(ref some) => Ok(some.clone()),
                 None => Err(Box::new(Error {
-                    message: Variable::Str(Arc::new("Expected `some(_)`, found `none()`".into())),
+                    message: Variable::Str(Arc::new(
+                        "Expected `some(_)`, found `none()`".into(),
+                    )),
                     trace: vec![],
                 })),
             },
             Variable::Bool(true, None) => Err(Box::new(Error {
                 message: Variable::Str(Arc::new(
-                    "This does not make sense, perhaps an array is empty?".into(),
+                    "This does not make sense, perhaps an array is empty?"
+                        .into(),
                 )),
                 trace: vec![],
             })),
             Variable::Bool(false, _) => Err(Box::new(Error {
                 message: Variable::Str(Arc::new(
-                    "Must be `true` to have meaning, try add or remove `!`".into(),
+                    "Must be `true` to have meaning, try add or remove `!`"
+                        .into(),
                 )),
                 trace: vec![],
             })),
             Variable::Bool(true, ref sec) => match *sec {
                 None => Err(Box::new(Error {
-                    message: Variable::Str(Arc::new("Expected `some(_)`, found `none()`".into())),
+                    message: Variable::Str(Arc::new(
+                        "Expected `some(_)`, found `none()`".into(),
+                    )),
                     trace: vec![],
                 })),
                 Some(_) => Ok(Box::new(Variable::Bool(true, sec.clone()))),
@@ -802,7 +892,9 @@ impl Runtime {
             Variable::F64(val, ref sec) => {
                 if val.is_nan() {
                     Err(Box::new(Error {
-                        message: Variable::Str(Arc::new("Expected number, found `NaN`".into())),
+                        message: Variable::Str(Arc::new(
+                            "Expected number, found `NaN`".into(),
+                        )),
                         trace: vec![],
                     }))
                 } else if sec.is_none() {
@@ -834,7 +926,7 @@ impl Runtime {
                 return self.err(
                     expr.source_range(),
                     "Expected `ok(_)`, `err(_)`, `bool`, `f64`",
-                )
+                );
             }
         };
         match v {
@@ -954,9 +1046,7 @@ impl Runtime {
     /// Start a new thread and return the handle.
     #[cfg(all(not(target_family = "wasm"), feature = "threading"))]
     pub fn go(&mut self, go: &ast::Go) -> FlowResult {
-        use crate::Thread;
-        use crate::threading::JoinHandle;
-        use crate::spawn;
+        use crate::{Thread, spawn, threading::JoinHandle};
 
         let n = go.call.args.len();
         let mut stack = vec![];
@@ -980,7 +1070,7 @@ impl Runtime {
                         arg.source_range(),
                         "Expected something. \
                                 Expression did not return a value.",
-                    )
+                    );
                 }
             };
             stack.push(v.deep_clone(&self.stack));
@@ -1040,13 +1130,16 @@ impl Runtime {
                     call.item.source_range,
                     "Expected something. \
                             Check that item returns a value.",
-                )
+                );
             }
         };
 
         let (f, env) = match self.get(&item) {
-            &Variable::Closure(ref f, ref env) => (f.clone(), env.clone()),
-            x => return self.err(call.source_range, &self.expected(x, "closure")),
+            Variable::Closure(f, env) => (f.clone(), env.clone()),
+            x => {
+                return self
+                    .err(call.source_range, &self.expected(x, "closure"));
+            }
         };
 
         if call.arg_len() != f.args.len() {
@@ -1082,7 +1175,7 @@ impl Runtime {
                         arg.source_range(),
                         "Expected something. \
                                 Check that expression returns a value.",
-                    )
+                    );
                 }
             };
         }
@@ -1131,11 +1224,16 @@ impl Runtime {
             // Do not look up locals to keep fixed length from end of stack.
             self.local_stack.push((arg.name.clone(), st + i));
         }
-        let (x, flow) = self.expression_module(&f.expr, Side::Right, &env.module)?;
+        let (x, flow) =
+            self.expression_module(&f.expr, Side::Right, &env.module)?;
         match flow {
-            Flow::Break(None) => return self.err(call.source_range, "Can not break from function"),
+            Flow::Break(None) => {
+                return self
+                    .err(call.source_range, "Can not break from function");
+            }
             Flow::ContinueLoop(None) => {
-                return self.err(call.source_range, "Can not continue from function")
+                return self
+                    .err(call.source_range, "Can not continue from function");
             }
             Flow::Break(Some(ref label)) => {
                 return Err(self.module.error(
@@ -1146,7 +1244,7 @@ impl Runtime {
                         label
                     ),
                     self,
-                ))
+                ));
             }
             Flow::ContinueLoop(Some(ref label)) => {
                 return Err(self.module.error(
@@ -1157,7 +1255,7 @@ impl Runtime {
                         label
                     ),
                     self,
-                ))
+                ));
             }
             _ => {}
         }
@@ -1214,7 +1312,11 @@ impl Runtime {
     }
 
     /// Called from the outside, e.g. a loader script by `call` or `call_ret` intrinsic.
-    pub fn call(&mut self, call: &ast::Call, module: &Arc<Module>) -> FlowResult {
+    pub fn call(
+        &mut self,
+        call: &ast::Call,
+        module: &Arc<Module>,
+    ) -> FlowResult {
         use std::mem::replace;
         let old_module = replace(&mut self.module, module.clone());
         // Keep track of the call state,
@@ -1244,7 +1346,7 @@ impl Runtime {
                         arg.source_range(),
                         "Expected something. \
                                 Expression did not return a value.",
-                    )
+                    );
                 }
             };
         }
@@ -1277,7 +1379,7 @@ impl Runtime {
                         arg.source_range(),
                         "Expected something. \
                                 Expression did not return a value.",
-                    )
+                    );
                 }
             };
         }
@@ -1312,7 +1414,7 @@ impl Runtime {
                     left_expr.source_range(),
                     "Expected something. \
                             Expression did not return a value.",
-                )
+                );
             }
         };
         let right = match self.expression(right_expr, Side::Right)? {
@@ -1325,7 +1427,7 @@ impl Runtime {
                     right_expr.source_range(),
                     "Expected something. \
                             Expression did not return a value.",
-                )
+                );
             }
         };
         let left = self.get(&left);
@@ -1366,7 +1468,7 @@ impl Runtime {
                     expr.source_range(),
                     "Expected something. \
                             Expression did not return a value.",
-                )
+                );
             }
         };
         let r = self.get(&r);
@@ -1409,18 +1511,33 @@ impl Runtime {
                                     }
                                 }
                                 Lazy::UnwrapOk => {
-                                    if let Variable::Result(Ok(x)) = self.get(&x) {
-                                        return Ok((Some((**x).clone()), Flow::Continue));
+                                    if let Variable::Result(Ok(x)) =
+                                        self.get(&x)
+                                    {
+                                        return Ok((
+                                            Some((**x).clone()),
+                                            Flow::Continue,
+                                        ));
                                     }
                                 }
                                 Lazy::UnwrapErr => {
-                                    if let Variable::Result(Err(x)) = self.get(&x) {
-                                        return Ok((Some(x.message.clone()), Flow::Continue));
+                                    if let Variable::Result(Err(x)) =
+                                        self.get(&x)
+                                    {
+                                        return Ok((
+                                            Some(x.message.clone()),
+                                            Flow::Continue,
+                                        ));
                                     }
                                 }
                                 Lazy::UnwrapSome => {
-                                    if let Variable::Option(Some(x)) = self.get(&x) {
-                                        return Ok((Some((**x).clone()), Flow::Continue));
+                                    if let Variable::Option(Some(x)) =
+                                        self.get(&x)
+                                    {
+                                        return Ok((
+                                            Some((**x).clone()),
+                                            Flow::Continue,
+                                        ));
                                     }
                                 }
                             }
@@ -1437,7 +1554,7 @@ impl Runtime {
                         arg.source_range(),
                         "Expected something. \
                                 Expression did not return a value.",
-                    )
+                    );
                 }
             };
         }
@@ -1498,18 +1615,33 @@ impl Runtime {
                                     }
                                 }
                                 Lazy::UnwrapOk => {
-                                    if let Variable::Result(Ok(x)) = self.get(&x) {
-                                        return Ok((Some((**x).clone()), Flow::Continue));
+                                    if let Variable::Result(Ok(x)) =
+                                        self.get(&x)
+                                    {
+                                        return Ok((
+                                            Some((**x).clone()),
+                                            Flow::Continue,
+                                        ));
                                     }
                                 }
                                 Lazy::UnwrapErr => {
-                                    if let Variable::Result(Err(x)) = self.get(&x) {
-                                        return Ok((Some(x.message.clone()), Flow::Continue));
+                                    if let Variable::Result(Err(x)) =
+                                        self.get(&x)
+                                    {
+                                        return Ok((
+                                            Some(x.message.clone()),
+                                            Flow::Continue,
+                                        ));
                                     }
                                 }
                                 Lazy::UnwrapSome => {
-                                    if let Variable::Option(Some(x)) = self.get(&x) {
-                                        return Ok((Some((**x).clone()), Flow::Continue));
+                                    if let Variable::Option(Some(x)) =
+                                        self.get(&x)
+                                    {
+                                        return Ok((
+                                            Some((**x).clone()),
+                                            Flow::Continue,
+                                        ));
                                     }
                                 }
                             }
@@ -1527,7 +1659,7 @@ impl Runtime {
                         arg.source_range(),
                         "Expected something. \
                                 Check that expression returns a value.",
-                    )
+                    );
                 }
             };
         }
@@ -1581,7 +1713,7 @@ impl Runtime {
                 }
             }
             channels.truncate(open);
-            if channels.len() == 0 {
+            if channels.is_empty() {
                 // Change of flag is guarded by the mutex.
                 f.senders.0.store(false, Ordering::Relaxed);
             }
@@ -1606,9 +1738,13 @@ impl Runtime {
         }
         let (x, flow) = self.block(&f.block)?;
         match flow {
-            Flow::Break(None) => return self.err(info.source_range, "Can not break from function"),
+            Flow::Break(None) => {
+                return self
+                    .err(info.source_range, "Can not break from function");
+            }
             Flow::ContinueLoop(None) => {
-                return self.err(info.source_range, "Can not continue from function")
+                return self
+                    .err(info.source_range, "Can not continue from function");
             }
             Flow::Break(Some(ref label)) => {
                 return Err(self.module.error(
@@ -1619,7 +1755,7 @@ impl Runtime {
                         label
                     ),
                     self,
-                ))
+                ));
             }
             Flow::ContinueLoop(Some(ref label)) => {
                 return Err(self.module.error(
@@ -1630,7 +1766,7 @@ impl Runtime {
                         label
                     ),
                     self,
-                ))
+                ));
             }
             _ => {}
         }
@@ -1640,8 +1776,9 @@ impl Runtime {
                 match self.stack.pop().expect(TINVOTS) {
                     Variable::Return => {
                         let source = custom_source.as_ref().unwrap_or(
-                            &self.module.functions[self.call_stack.last()
-                                .expect(CSIE).index].source,
+                            &self.module.functions
+                                [self.call_stack.last().expect(CSIE).index]
+                                .source,
                         );
                         Err(self.module.error_source(
                             info.source_range,
@@ -1662,8 +1799,9 @@ impl Runtime {
             }
             (false, Some(_)) => {
                 let source = custom_source.as_ref().unwrap_or(
-                    &self.module.functions[self.call_stack.last()
-                        .expect(CSIE).index].source,
+                    &self.module.functions
+                        [self.call_stack.last().expect(CSIE).index]
+                        .source,
                 );
                 Err(self.module.error_source(
                     info.source_range,
@@ -1679,8 +1817,9 @@ impl Runtime {
                 // TODO: Could return the last value on the stack.
                 //       Requires .pop_fn delayed after.
                 let source = custom_source.as_ref().unwrap_or(
-                    &self.module.functions[self.call_stack.last()
-                        .expect(CSIE).index].source,
+                    &self.module.functions
+                        [self.call_stack.last().expect(CSIE).index]
+                        .source,
                 );
                 Err(self.module.error_source(
                     info.source_range,
@@ -1711,12 +1850,20 @@ impl Runtime {
         match call.f_index {
             FnIndex::Void(f) => self.call_void(&call.args, f, &call.info),
             FnIndex::Return(f) => self.call_return(&call.args, f, &call.info),
-            FnIndex::Lazy(f, lazy_inv) => self.call_lazy(&call.args, f, lazy_inv, &call.info),
-            FnIndex::BinOp(f) => self.call_binop(&call.args[0], &call.args[1], f, &call.info),
-            FnIndex::UnOp(f) => self.call_unop(&call.args[0], f, &call.info),
-            FnIndex::Loaded(f_index) => {
-                self.call_loaded(&call.args, f_index, &call.info, &call.custom_source, loader)
+            FnIndex::Lazy(f, lazy_inv) => {
+                self.call_lazy(&call.args, f, lazy_inv, &call.info)
             }
+            FnIndex::BinOp(f) => {
+                self.call_binop(&call.args[0], &call.args[1], f, &call.info)
+            }
+            FnIndex::UnOp(f) => self.call_unop(&call.args[0], f, &call.info),
+            FnIndex::Loaded(f_index) => self.call_loaded(
+                &call.args,
+                f_index,
+                &call.info,
+                &call.custom_source,
+                loader,
+            ),
             FnIndex::None => Err(self.module.error(
                 call.info.source_range,
                 &format!(
@@ -1744,7 +1891,10 @@ impl Runtime {
                     args: args
                         .iter()
                         .map(|arg| {
-                            ast::Expression::Variable(Box::new((Range::empty(0), arg.clone())))
+                            ast::Expression::Variable(Box::new((
+                                Range::empty(0),
+                                arg.clone(),
+                            )))
                         })
                         .collect(),
                     custom_source: None,
@@ -1778,7 +1928,12 @@ impl Runtime {
             f_index: fn_index,
             args: args
                 .iter()
-                .map(|arg| ast::Expression::Variable(Box::new((Range::empty(0), arg.clone()))))
+                .map(|arg| {
+                    ast::Expression::Variable(Box::new((
+                        Range::empty(0),
+                        arg.clone(),
+                    )))
+                })
                 .collect(),
             custom_source: None,
             info: Box::new(ast::CallInfo {
@@ -1809,15 +1964,17 @@ impl Runtime {
                     sw.expr.source_range(),
                     &format!("{}\nExpected something", self.stack_trace()),
                     self,
-                ))
+                ));
             }
         };
         let v = match self.get(&v) {
             &Variable::Vec4(v) => v,
             x => {
-                return Err(self
-                    .module
-                    .error(sw.source_range, &self.expected(x, "vec4"), self))
+                return Err(self.module.error(
+                    sw.source_range,
+                    &self.expected(x, "vec4"),
+                    self,
+                ));
             }
         };
         self.stack.push(Variable::f64(f64::from(v[sw.sw0])));
@@ -1836,7 +1993,7 @@ impl Runtime {
 
         Ok((
             Some(if link.items.is_empty() {
-                Variable::Link(Box::new(Link::new()))
+                Variable::Link(Box::default())
             } else {
                 let st = self.stack.len();
                 let lc = self.local_stack.len();
@@ -1850,15 +2007,12 @@ impl Runtime {
                             return Ok((res, flow));
                         }
                     };
-                    match new_link.push(self.get(&v)) {
-                        Err(err) => {
-                            return Err(self.module.error(
-                                item.source_range(),
-                                &format!("{}\n{}", self.stack_trace(), err),
-                                self,
-                            ))
-                        }
-                        Ok(()) => {}
+                    if let Err(err) = new_link.push(self.get(&v)) {
+                        return Err(self.module.error(
+                            item.source_range(),
+                            &format!("{}\n{}", self.stack_trace(), err),
+                            self,
+                        ));
                     }
                 }
                 self.stack.truncate(st);
@@ -1872,22 +2026,28 @@ impl Runtime {
 
     fn object(&mut self, obj: &ast::Object) -> FlowResult {
         let mut object: HashMap<_, _> = HashMap::new();
-        for &(ref key, ref expr) in &obj.key_values {
+        for (key, expr) in &obj.key_values {
             let x = match self.expression(expr, Side::Right)? {
                 (Some(x), Flow::Continue) => x,
                 (x, Flow::Return) => {
                     return Ok((x, Flow::Return));
                 }
-                _ => return self.err(expr.source_range(), "Expected something"),
+                _ => {
+                    return self.err(expr.source_range(), "Expected something");
+                }
             };
             match object.insert(key.clone(), x) {
                 None => {}
                 Some(_) => {
                     return Err(self.module.error(
                         expr.source_range(),
-                        &format!("{}\nDuplicate key in object `{}`", self.stack_trace(), key),
+                        &format!(
+                            "{}\nDuplicate key in object `{}`",
+                            self.stack_trace(),
+                            key
+                        ),
                         self,
-                    ))
+                    ));
                 }
             }
         }
@@ -1900,7 +2060,9 @@ impl Runtime {
             array.push(match self.expression(item, Side::Right)? {
                 (Some(x), Flow::Continue) => x,
                 (x, Flow::Return) => return Ok((x, Flow::Return)),
-                _ => return self.err(item.source_range(), "Expected something"),
+                _ => {
+                    return self.err(item.source_range(), "Expected something");
+                }
             });
         }
         Ok((Some(Variable::Array(Arc::new(array))), Flow::Continue))
@@ -1910,20 +2072,28 @@ impl Runtime {
         let fill = match self.expression(&array_fill.fill, Side::Right)? {
             (x, Flow::Return) => return Ok((x, Flow::Return)),
             (Some(x), Flow::Continue) => x,
-            _ => return self.err(array_fill.fill.source_range(), "Expected something"),
+            _ => {
+                return self
+                    .err(array_fill.fill.source_range(), "Expected something");
+            }
         };
         let n = match self.expression(&array_fill.n, Side::Right)? {
             (x, Flow::Return) => return Ok((x, Flow::Return)),
             (Some(x), Flow::Continue) => x,
-            _ => return self.err(array_fill.n.source_range(), "Expected something"),
+            _ => {
+                return self
+                    .err(array_fill.n.source_range(), "Expected something");
+            }
         };
         let v = match (self.get(&fill), self.get(&n)) {
-            (x, &Variable::F64(n, _)) => Variable::Array(Arc::new(vec![x.clone(); n as usize])),
+            (x, &Variable::F64(n, _)) => {
+                Variable::Array(Arc::new(vec![x.clone(); n as usize]))
+            }
             _ => {
                 return self.err(
                     array_fill.n.source_range(),
                     "Expected number for length in `[value; length]`",
-                )
+                );
             }
         };
         Ok((Some(v), Flow::Continue))
@@ -1935,8 +2105,7 @@ impl Runtime {
         left: &ast::Expression,
         right: &ast::Expression,
     ) -> FlowResult {
-        use crate::ast::AssignOp::*;
-        use crate::ast::Expression;
+        use crate::ast::{AssignOp::*, Expression};
 
         if op != Assign {
             // Evaluate right side before left because the left leaves
@@ -1949,13 +2118,18 @@ impl Runtime {
                     return self.err(
                         right.source_range(),
                         "Expected something from the right side",
-                    )
+                    );
                 }
             };
             let a = match self.expression(left, Side::LeftInsert(false))? {
                 (Some(x), Flow::Continue) => x,
                 (x, Flow::Return) => return Ok((x, Flow::Return)),
-                _ => return self.err(left.source_range(), "Expected something from the left side"),
+                _ => {
+                    return self.err(
+                        left.source_range(),
+                        "Expected something from the left side",
+                    );
+                }
             };
             let r = match a {
                 Variable::UnsafeRef(r) => {
@@ -1968,7 +2142,9 @@ impl Runtime {
                     }
                     r
                 }
-                Variable::Ref(ind) => UnsafeRef(&mut self.stack[ind] as *mut Variable),
+                Variable::Ref(ind) => {
+                    UnsafeRef(&mut self.stack[ind] as *mut Variable)
+                }
                 x => panic!("Expected reference, found `{}`", x.typeof_var()),
             };
 
@@ -1991,17 +2167,39 @@ impl Runtime {
                         Variable::Vec4(ref mut n) => {
                             let b = b as f32;
                             match op {
-                                Add => *n = [n[0] + b, n[1] + b, n[2] + b, n[3] + b],
-                                Sub => *n = [n[0] - b, n[1] - b, n[2] - b, n[3] - b],
-                                Mul => *n = [n[0] * b, n[1] * b, n[2] * b, n[3] * b],
-                                Div => *n = [n[0] / b, n[1] / b, n[2] / b, n[3] / b],
-                                Rem => *n = [n[0] % b, n[1] % b, n[2] % b, n[3] % b],
+                                Add => {
+                                    *n =
+                                        [n[0] + b, n[1] + b, n[2] + b, n[3] + b]
+                                }
+                                Sub => {
+                                    *n =
+                                        [n[0] - b, n[1] - b, n[2] - b, n[3] - b]
+                                }
+                                Mul => {
+                                    *n =
+                                        [n[0] * b, n[1] * b, n[2] * b, n[3] * b]
+                                }
+                                Div => {
+                                    *n =
+                                        [n[0] / b, n[1] / b, n[2] / b, n[3] / b]
+                                }
+                                Rem => {
+                                    *n =
+                                        [n[0] % b, n[1] % b, n[2] % b, n[3] % b]
+                                }
                                 Pow => {
-                                    *n = [n[0].powf(b), n[1].powf(b), n[2].powf(b), n[3].powf(b)]
+                                    *n = [
+                                        n[0].powf(b),
+                                        n[1].powf(b),
+                                        n[2].powf(b),
+                                        n[3].powf(b),
+                                    ]
                                 }
                                 _ => {
-                                    return self
-                                        .err(left.source_range(), "Expected assigning to a number")
+                                    return self.err(
+                                        left.source_range(),
+                                        "Expected assigning to a number",
+                                    );
                                 }
                             }
                         }
@@ -2009,7 +2207,10 @@ impl Runtime {
                             if let Set = op {
                                 *r.0 = Variable::F64(b, sec.clone())
                             } else {
-                                return self.err(left.source_range(), "Return has no value");
+                                return self.err(
+                                    left.source_range(),
+                                    "Return has no value",
+                                );
                             }
                         }
                         Variable::Link(ref mut n) => {
@@ -2024,7 +2225,10 @@ impl Runtime {
                             }
                         }
                         _ => {
-                            return self.err(left.source_range(), "Expected assigning to a number")
+                            return self.err(
+                                left.source_range(),
+                                "Expected assigning to a number",
+                            );
                         }
                     };
                 },
@@ -2032,11 +2236,46 @@ impl Runtime {
                     match *r.0 {
                         Variable::Vec4(ref mut n) => match op {
                             Set => *n = b,
-                            Add => *n = [n[0] + b[0], n[1] + b[1], n[2] + b[2], n[3] + b[3]],
-                            Sub => *n = [n[0] - b[0], n[1] - b[1], n[2] - b[2], n[3] - b[3]],
-                            Mul => *n = [n[0] * b[0], n[1] * b[1], n[2] * b[2], n[3] * b[3]],
-                            Div => *n = [n[0] / b[0], n[1] / b[1], n[2] / b[2], n[3] / b[3]],
-                            Rem => *n = [n[0] % b[0], n[1] % b[1], n[2] % b[2], n[3] % b[3]],
+                            Add => {
+                                *n = [
+                                    n[0] + b[0],
+                                    n[1] + b[1],
+                                    n[2] + b[2],
+                                    n[3] + b[3],
+                                ]
+                            }
+                            Sub => {
+                                *n = [
+                                    n[0] - b[0],
+                                    n[1] - b[1],
+                                    n[2] - b[2],
+                                    n[3] - b[3],
+                                ]
+                            }
+                            Mul => {
+                                *n = [
+                                    n[0] * b[0],
+                                    n[1] * b[1],
+                                    n[2] * b[2],
+                                    n[3] * b[3],
+                                ]
+                            }
+                            Div => {
+                                *n = [
+                                    n[0] / b[0],
+                                    n[1] / b[1],
+                                    n[2] / b[2],
+                                    n[3] / b[3],
+                                ]
+                            }
+                            Rem => {
+                                *n = [
+                                    n[0] % b[0],
+                                    n[1] % b[1],
+                                    n[2] % b[2],
+                                    n[3] % b[3],
+                                ]
+                            }
                             Pow => {
                                 *n = [
                                     n[0].powf(b[0]),
@@ -2051,10 +2290,18 @@ impl Runtime {
                             if let Set = op {
                                 *r.0 = Variable::Vec4(b)
                             } else {
-                                return self.err(left.source_range(), "Return has no value");
+                                return self.err(
+                                    left.source_range(),
+                                    "Return has no value",
+                                );
                             }
                         }
-                        _ => return self.err(left.source_range(), "Expected assigning to a vec4"),
+                        _ => {
+                            return self.err(
+                                left.source_range(),
+                                "Expected assigning to a vec4",
+                            );
+                        }
                     };
                 },
                 Variable::Mat4(ref b) => unsafe {
@@ -2083,17 +2330,25 @@ impl Runtime {
                                     left.source_range(),
                                     "Can not use this assignment \
                                             operator with `mat4`",
-                                )
+                                );
                             }
                         },
                         Variable::Return => {
                             if let Set = op {
                                 *r.0 = Variable::Mat4(b.clone())
                             } else {
-                                return self.err(left.source_range(), "Return has no value");
+                                return self.err(
+                                    left.source_range(),
+                                    "Return has no value",
+                                );
                             }
                         }
-                        _ => return self.err(left.source_range(), "Expected assigning to a mat4"),
+                        _ => {
+                            return self.err(
+                                left.source_range(),
+                                "Expected assigning to a mat4",
+                            );
+                        }
                     }
                 },
                 Variable::Bool(b, ref sec) => unsafe {
@@ -2109,7 +2364,10 @@ impl Runtime {
                             if let Set = op {
                                 *r.0 = Variable::Bool(b, sec.clone())
                             } else {
-                                return self.err(left.source_range(), "Return has no value");
+                                return self.err(
+                                    left.source_range(),
+                                    "Return has no value",
+                                );
                             }
                         }
                         Variable::Link(ref mut n) => {
@@ -2123,7 +2381,12 @@ impl Runtime {
                                 );
                             }
                         }
-                        _ => return self.err(left.source_range(), "Expected assigning to a bool"),
+                        _ => {
+                            return self.err(
+                                left.source_range(),
+                                "Expected assigning to a bool",
+                            );
+                        }
                     };
                 },
                 Variable::Str(ref b) => unsafe {
@@ -2137,7 +2400,10 @@ impl Runtime {
                             if let Set = op {
                                 *r.0 = Variable::Str(b.clone())
                             } else {
-                                return self.err(left.source_range(), "Return has no value");
+                                return self.err(
+                                    left.source_range(),
+                                    "Return has no value",
+                                );
                             }
                         }
                         Variable::Link(ref mut n) => {
@@ -2151,7 +2417,12 @@ impl Runtime {
                                 );
                             }
                         }
-                        _ => return self.err(left.source_range(), "Expected assigning to text"),
+                        _ => {
+                            return self.err(
+                                left.source_range(),
+                                "Expected assigning to text",
+                            );
+                        }
                     }
                 },
                 Variable::Object(ref b) => unsafe {
@@ -2167,10 +2438,18 @@ impl Runtime {
                             if let Set = op {
                                 *r.0 = Variable::Object(b.clone())
                             } else {
-                                return self.err(left.source_range(), "Return has no value");
+                                return self.err(
+                                    left.source_range(),
+                                    "Return has no value",
+                                );
                             }
                         }
-                        _ => return self.err(left.source_range(), "Expected assigning to object"),
+                        _ => {
+                            return self.err(
+                                left.source_range(),
+                                "Expected assigning to object",
+                            );
+                        }
                     }
                 },
                 Variable::Array(ref b) => unsafe {
@@ -2186,10 +2465,18 @@ impl Runtime {
                             if let Set = op {
                                 *r.0 = Variable::Array(b.clone())
                             } else {
-                                return self.err(left.source_range(), "Return has no value");
+                                return self.err(
+                                    left.source_range(),
+                                    "Return has no value",
+                                );
                             }
                         }
-                        _ => return self.err(left.source_range(), "Expected assigning to array"),
+                        _ => {
+                            return self.err(
+                                left.source_range(),
+                                "Expected assigning to array",
+                            );
+                        }
                     }
                 },
                 Variable::Link(ref b) => unsafe {
@@ -2204,10 +2491,18 @@ impl Runtime {
                             if let Set = op {
                                 *r.0 = Variable::Link(b.clone())
                             } else {
-                                return self.err(left.source_range(), "Return has no value");
+                                return self.err(
+                                    left.source_range(),
+                                    "Return has no value",
+                                );
                             }
                         }
-                        _ => return self.err(left.source_range(), "Expected assigning to link"),
+                        _ => {
+                            return self.err(
+                                left.source_range(),
+                                "Expected assigning to link",
+                            );
+                        }
                     }
                 },
                 Variable::Option(ref b) => unsafe {
@@ -2223,10 +2518,18 @@ impl Runtime {
                             if let Set = op {
                                 *r.0 = Variable::Option(b.clone())
                             } else {
-                                return self.err(left.source_range(), "Return has no value");
+                                return self.err(
+                                    left.source_range(),
+                                    "Return has no value",
+                                );
                             }
                         }
-                        _ => return self.err(left.source_range(), "Expected assigning to option"),
+                        _ => {
+                            return self.err(
+                                left.source_range(),
+                                "Expected assigning to option",
+                            );
+                        }
                     }
                 },
                 Variable::Result(ref b) => unsafe {
@@ -2242,10 +2545,18 @@ impl Runtime {
                             if let Set = op {
                                 *r.0 = Variable::Result(b.clone())
                             } else {
-                                return self.err(left.source_range(), "Return has no value");
+                                return self.err(
+                                    left.source_range(),
+                                    "Return has no value",
+                                );
                             }
                         }
-                        _ => return self.err(left.source_range(), "Expected assigning to result"),
+                        _ => {
+                            return self.err(
+                                left.source_range(),
+                                "Expected assigning to result",
+                            );
+                        }
                     }
                 },
                 Variable::RustObject(ref b) => unsafe {
@@ -2261,12 +2572,17 @@ impl Runtime {
                             if let Set = op {
                                 *r.0 = Variable::RustObject(b.clone())
                             } else {
-                                return self.err(left.source_range(), "Return has no value");
+                                return self.err(
+                                    left.source_range(),
+                                    "Return has no value",
+                                );
                             }
                         }
                         _ => {
-                            return self
-                                .err(left.source_range(), "Expected assigning to rust_object")
+                            return self.err(
+                                left.source_range(),
+                                "Expected assigning to rust_object",
+                            );
                         }
                     }
                 },
@@ -2283,10 +2599,18 @@ impl Runtime {
                             if let Set = op {
                                 *r.0 = Variable::Closure(b.clone(), env.clone())
                             } else {
-                                return self.err(left.source_range(), "Return has no value");
+                                return self.err(
+                                    left.source_range(),
+                                    "Return has no value",
+                                );
                             }
                         }
-                        _ => return self.err(left.source_range(), "Expected assigning to closure"),
+                        _ => {
+                            return self.err(
+                                left.source_range(),
+                                "Expected assigning to closure",
+                            );
+                        }
                     }
                 },
                 ref x => {
@@ -2312,7 +2636,7 @@ impl Runtime {
                             return self.err(
                                 right.source_range(),
                                 "Expected something from the right side",
-                            )
+                            );
                         }
                     };
                     let v = match x {
@@ -2321,14 +2645,16 @@ impl Runtime {
                         x => x,
                     };
                     if !item.ids.is_empty() {
-                        let x = match self.expression(left, Side::LeftInsert(true))? {
+                        let x = match self
+                            .expression(left, Side::LeftInsert(true))?
+                        {
                             (Some(x), Flow::Continue) => x,
                             (x, Flow::Return) => return Ok((x, Flow::Return)),
                             _ => {
                                 return self.err(
                                     left.source_range(),
                                     "Expected something from the left side",
-                                )
+                                );
                             }
                         };
                         match x {
@@ -2336,7 +2662,8 @@ impl Runtime {
                             _ => panic!("Expected unsafe reference"),
                         }
                     } else {
-                        self.local_stack.push((item.name.clone(), self.stack.len()));
+                        self.local_stack
+                            .push((item.name.clone(), self.stack.len()));
                         if item.current {
                             self.current_stack
                                 .push((item.name.clone(), self.stack.len()));
@@ -2406,7 +2733,8 @@ impl Runtime {
 
         use ast::Id;
 
-        let locals = self.local_stack.len() - self.call_stack.last().expect(CSIE).local_len;
+        let locals = self.local_stack.len()
+            - self.call_stack.last().expect(CSIE).local_len;
         let stack_id = {
             if cfg!(not(feature = "debug_lookup")) {
                 self.stack.len() - item.static_stack_id.get().unwrap()
@@ -2414,14 +2742,17 @@ impl Runtime {
                 match item.stack_id.get() {
                     Some(val) => self.stack.len() - val,
                     None => {
-                        let name: &str = &**item.name;
+                        let name: &str = &item.name;
                         let mut found = false;
-                        for &(ref n, id) in self.local_stack.iter().rev().take(locals) {
+                        for &(ref n, id) in
+                            self.local_stack.iter().rev().take(locals)
+                        {
                             if **n == name {
                                 let new_val = Some(self.stack.len() - id);
                                 item.stack_id.set(new_val);
 
-                                let static_stack_id = item.static_stack_id.get();
+                                let static_stack_id =
+                                    item.static_stack_id.get();
                                 if new_val != static_stack_id {
                                     return Err(self.module.error(item.source_range,
                                         &format!(
@@ -2444,7 +2775,11 @@ impl Runtime {
                                 &format!(
                                     "{}\nRequires `->` on function `{}`",
                                     self.stack_trace(),
-                                    &self.call_stack.last().expect(CSIE).fn_name
+                                    &self
+                                        .call_stack
+                                        .last()
+                                        .expect(CSIE)
+                                        .fn_name
                                 ),
                                 self,
                             ));
@@ -2496,7 +2831,7 @@ impl Runtime {
                         return self.err(
                             item.source_range,
                             "Expected `ok(_)`, `err(_)`, `bool`, `f64`",
-                        )
+                        );
                     }
                 };
                 return try_fun(
@@ -2518,7 +2853,12 @@ impl Runtime {
                 match self.expression(expr, Side::Right)? {
                     (x, Flow::Return) => return Ok((x, Flow::Return)),
                     (Some(x), Flow::Continue) => self.stack.push(x),
-                    _ => return self.err(expr.source_range(), "Expected something for index"),
+                    _ => {
+                        return self.err(
+                            expr.source_range(),
+                            "Expected something for index",
+                        );
+                    }
                 };
             }
         }
@@ -2605,7 +2945,10 @@ impl Runtime {
                             &format!("In function `{}`{}", &call.fn_name, file),
                             call.index,
                         ));
-                        return Ok((Some(Variable::Result(Err(err))), Flow::Return));
+                        return Ok((
+                            Some(Variable::Result(Err(err))),
+                            Flow::Return,
+                        ));
                     }
                 }
             }
@@ -2624,7 +2967,9 @@ impl Runtime {
                     i + 2 == item_len,
                 )?;
 
-                if item.try_ids.len() > try_id_ind && item.try_ids[try_id_ind] == i + 1 {
+                if item.try_ids.len() > try_id_ind
+                    && item.try_ids[try_id_ind] == i + 1
+                {
                     // Check for error on `?` for rest of ids.
                     let v = unsafe {
                         match Runtime::try_msg(&*var) {
@@ -2659,7 +3004,8 @@ impl Runtime {
                                     call.index,
                                 ));
                             }
-                            if let Variable::Return = stack[call.stack_len - 1] {
+                            if let Variable::Return = stack[call.stack_len - 1]
+                            {
                             } else {
                                 return Err(self.module.error_fnindex(
                                     prop.source_range(),
@@ -2678,10 +3024,16 @@ impl Runtime {
                             };
                             err.trace.push(self.module.error_fnindex(
                                 prop.source_range(),
-                                &format!("In function `{}`{}", &call.fn_name, file),
+                                &format!(
+                                    "In function `{}`{}",
+                                    &call.fn_name, file
+                                ),
                                 call.index,
                             ));
-                            return Ok((Some(Variable::Result(Err(err))), Flow::Return));
+                            return Ok((
+                                Some(Variable::Result(Err(err))),
+                                Flow::Return,
+                            ));
                         }
                     }
                 }
@@ -2705,7 +3057,7 @@ impl Runtime {
                 return self.err(
                     if_expr.cond.source_range(),
                     "Expected bool from if condition",
-                )
+                );
             }
         };
         let val = match *self.get(&cond) {
@@ -2714,30 +3066,38 @@ impl Runtime {
                 return self.err(
                     if_expr.cond.source_range(),
                     "Expected bool from if condition",
-                )
+                );
             }
         };
         if val {
             return self.block(&if_expr.true_block);
         }
-        for (cond, body) in if_expr
-            .else_if_conds
-            .iter()
-            .zip(if_expr.else_if_blocks.iter())
+        for (cond, body) in
+            if_expr.else_if_conds.iter().zip(if_expr.else_if_blocks.iter())
         {
             let else_if_cond = match self.expression(cond, Side::Right)? {
                 (Some(x), Flow::Continue) => x,
                 (x, Flow::Return) => {
                     return Ok((x, Flow::Return));
                 }
-                _ => return self.err(cond.source_range(), "Expected bool from else if condition"),
+                _ => {
+                    return self.err(
+                        cond.source_range(),
+                        "Expected bool from else if condition",
+                    );
+                }
             };
             match *self.get(&else_if_cond) {
                 Variable::Bool(false, _) => {}
                 Variable::Bool(true, _) => {
                     return self.block(body);
                 }
-                _ => return self.err(cond.source_range(), "Expected bool from else if condition"),
+                _ => {
+                    return self.err(
+                        cond.source_range(),
+                        "Expected bool from else if condition",
+                    );
+                }
             }
         }
         if let Some(ref block) = if_expr.else_block {
@@ -2758,7 +3118,7 @@ impl Runtime {
                 return self.err(
                     for_expr.init.source_range(),
                     "Expected nothing from for init",
-                )
+                );
             }
         };
         let st = self.stack.len();
@@ -2772,12 +3132,15 @@ impl Runtime {
                     return self.err(
                         for_expr.cond.source_range(),
                         "Expected bool from for condition",
-                    )
+                    );
                 }
             };
             let val = match val {
                 Variable::Bool(val, _) => val,
-                _ => return self.err(for_expr.cond.source_range(), "Expected bool"),
+                _ => {
+                    return self
+                        .err(for_expr.cond.source_range(), "Expected bool");
+                }
             };
             if !val {
                 break;
@@ -2817,7 +3180,7 @@ impl Runtime {
                             return self.err(
                                 for_expr.step.source_range(),
                                 "Expected nothing from for step",
-                            )
+                            );
                         }
                     };
                     continue;
@@ -2830,7 +3193,7 @@ impl Runtime {
                     return self.err(
                         for_expr.step.source_range(),
                         "Expected nothing from for step",
-                    )
+                    );
                 }
             };
             self.stack.truncate(st);
@@ -2847,7 +3210,12 @@ impl Runtime {
                 (None, Flow::Continue) => {}
                 (Some(x), Flow::Continue) => self.stack.push(x),
                 (x, Flow::Return) => return Ok((x, Flow::Return)),
-                _ => return self.err(expr.source_range(), "Expected something from vec4 argument"),
+                _ => {
+                    return self.err(
+                        expr.source_range(),
+                        "Expected something from vec4 argument",
+                    );
+                }
             };
             // Skip the rest if swizzling pushes arguments.
             if self.stack.len() - st > 3 {
@@ -2857,22 +3225,42 @@ impl Runtime {
         let w = self.stack.pop().expect(TINVOTS);
         let w = match self.get(&w) {
             &Variable::F64(val, _) => val,
-            x => return self.err(vec4.args[3].source_range(), &self.expected(x, "number")),
+            x => {
+                return self.err(
+                    vec4.args[3].source_range(),
+                    &self.expected(x, "number"),
+                );
+            }
         };
         let z = self.stack.pop().expect(TINVOTS);
         let z = match self.get(&z) {
             &Variable::F64(val, _) => val,
-            x => return self.err(vec4.args[2].source_range(), &self.expected(x, "number")),
+            x => {
+                return self.err(
+                    vec4.args[2].source_range(),
+                    &self.expected(x, "number"),
+                );
+            }
         };
         let y = self.stack.pop().expect(TINVOTS);
         let y = match self.get(&y) {
             &Variable::F64(val, _) => val,
-            x => return self.err(vec4.args[1].source_range(), &self.expected(x, "number")),
+            x => {
+                return self.err(
+                    vec4.args[1].source_range(),
+                    &self.expected(x, "number"),
+                );
+            }
         };
         let x = self.stack.pop().expect(TINVOTS);
         let x = match self.get(&x) {
             &Variable::F64(val, _) => val,
-            x => return self.err(vec4.args[0].source_range(), &self.expected(x, "number")),
+            x => {
+                return self.err(
+                    vec4.args[0].source_range(),
+                    &self.expected(x, "number"),
+                );
+            }
         };
         Ok((
             Some(Variable::Vec4([x as f32, y as f32, z as f32, w as f32])),
@@ -2885,28 +3273,53 @@ impl Runtime {
                 (None, Flow::Continue) => {}
                 (Some(x), Flow::Continue) => self.stack.push(x),
                 (x, Flow::Return) => return Ok((x, Flow::Return)),
-                _ => return self.err(expr.source_range(), "Expected something from mat4 argument"),
+                _ => {
+                    return self.err(
+                        expr.source_range(),
+                        "Expected something from mat4 argument",
+                    );
+                }
             };
         }
         let w = self.stack.pop().expect(TINVOTS);
         let w = match self.get(&w) {
             &Variable::Vec4(val) => val,
-            x => return self.err(mat4.args[3].source_range(), &self.expected(x, "vec4")),
+            x => {
+                return self.err(
+                    mat4.args[3].source_range(),
+                    &self.expected(x, "vec4"),
+                );
+            }
         };
         let z = self.stack.pop().expect(TINVOTS);
         let z = match self.get(&z) {
             &Variable::Vec4(val) => val,
-            x => return self.err(mat4.args[2].source_range(), &self.expected(x, "vec4")),
+            x => {
+                return self.err(
+                    mat4.args[2].source_range(),
+                    &self.expected(x, "vec4"),
+                );
+            }
         };
         let y = self.stack.pop().expect(TINVOTS);
         let y = match self.get(&y) {
             &Variable::Vec4(val) => val,
-            x => return self.err(mat4.args[1].source_range(), &self.expected(x, "vec4")),
+            x => {
+                return self.err(
+                    mat4.args[1].source_range(),
+                    &self.expected(x, "vec4"),
+                );
+            }
         };
         let x = self.stack.pop().expect(TINVOTS);
         let x = match self.get(&x) {
             &Variable::Vec4(val) => val,
-            x => return self.err(mat4.args[0].source_range(), &self.expected(x, "vec4")),
+            x => {
+                return self.err(
+                    mat4.args[0].source_range(),
+                    &self.expected(x, "vec4"),
+                );
+            }
         };
         Ok((
             Some(Variable::Mat4(Box::new([
@@ -2923,7 +3336,11 @@ impl Runtime {
         stack_trace(&self.call_stack)
     }
 
-    pub(crate) fn get_module(&self, source: &str, target: &mut String) -> Result<(), String> {
+    pub(crate) fn get_module(
+        &self,
+        source: &str,
+        target: &mut String,
+    ) -> Result<(), String> {
         (self.module_lookup)(source, target)
     }
 }

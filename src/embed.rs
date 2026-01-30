@@ -82,7 +82,7 @@ impl PopVariable for bool {
 impl PopVariable for String {
     fn pop_var(rt: &Runtime, var: &Variable) -> Result<Self, String> {
         if let Variable::Str(ref s) = *var {
-            Ok((&**s).clone())
+            Ok((**s).clone())
         } else {
             Err(rt.expected(var, "string"))
         }

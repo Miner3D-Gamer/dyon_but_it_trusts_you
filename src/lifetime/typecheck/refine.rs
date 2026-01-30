@@ -82,7 +82,7 @@ pub(crate) fn declaration(
                 break 'outer;
             }
             let found_arg =
-                if let (&Some(ref a), &Some(ref b)) = (&nodes[arg_expr].ty, &nodes[ty_arg].ty) {
+                if let (Some(a), Some(b)) = (&nodes[arg_expr].ty, &nodes[ty_arg].ty) {
                     let b = b
                         .bind_ty_vars(a, &nodes[ty].names, &mut ty_vars)
                         .map_err(|err| nodes[arg_expr].source.wrap(err))?;
@@ -103,8 +103,8 @@ pub(crate) fn declaration(
                 break;
             }
         }
-        if all {
-            if let Some(&ind) = nodes[ty]
+        if all
+            && let Some(&ind) = nodes[ty]
                 .children
                 .iter()
                 .find(|&&ty| nodes[ty].kind == Kind::TyRet)
@@ -123,7 +123,6 @@ pub(crate) fn declaration(
                 found = true;
                 break;
             }
-        }
     }
 
     report(i, found, ambiguous, count, nodes, todo)

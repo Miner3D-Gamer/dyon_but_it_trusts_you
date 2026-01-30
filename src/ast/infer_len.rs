@@ -6,7 +6,8 @@ use crate::FnIndex;
 pub fn infer(block: &Block, name: &str) -> Option<Expression> {
     let mut decls: Vec<Arc<String>> = vec![];
     let list: Option<Item> = infer_block(block, name, &mut decls);
-    let res = list.map(|item| {
+    
+    list.map(|item| {
         let source_range = item.source_range;
         Expression::Call(Box::new(Call {
             f_index: FnIndex::None,
@@ -18,8 +19,7 @@ pub fn infer(block: &Block, name: &str) -> Option<Expression> {
                 source_range,
             }),
         }))
-    });
-    res
+    })
 }
 
 fn infer_expr(expr: &Expression, name: &str, decls: &mut Vec<Arc<String>>) -> Option<Item> {
@@ -51,7 +51,7 @@ fn infer_expr(expr: &Expression, name: &str, decls: &mut Vec<Arc<String>>) -> Op
             }
         }
         Object(ref obj) => {
-            for &(_, ref v) in &obj.key_values {
+            for (_, v) in &obj.key_values {
                 let res = infer_expr(v, name, decls);
                 if res.is_some() {
                     return res;

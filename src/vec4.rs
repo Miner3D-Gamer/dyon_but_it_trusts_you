@@ -136,126 +136,126 @@ impl From<(u8, u8, u8, u8)> for Vec4 {
     }
 }
 
-impl Into<[f32; 2]> for Vec4 {
-    fn into(self) -> [f32; 2] {
-        [self.0[0], self.0[1]]
+impl From<Vec4> for [f32; 2] {
+    fn from(val: Vec4) -> Self {
+        [val.0[0], val.0[1]]
     }
 }
 
-impl Into<[f32; 3]> for Vec4 {
-    fn into(self) -> [f32; 3] {
-        [self.0[0], self.0[1], self.0[2]]
+impl From<Vec4> for [f32; 3] {
+    fn from(val: Vec4) -> Self {
+        [val.0[0], val.0[1], val.0[2]]
     }
 }
 
-impl Into<[f32; 4]> for Vec4 {
-    fn into(self) -> [f32; 4] {
-        self.0
+impl From<Vec4> for [f32; 4] {
+    fn from(val: Vec4) -> Self {
+        val.0
     }
 }
 
-impl Into<[f64; 2]> for Vec4 {
-    fn into(self) -> [f64; 2] {
-        [f64::from(self.0[0]), f64::from(self.0[1])]
+impl From<Vec4> for [f64; 2] {
+    fn from(val: Vec4) -> Self {
+        [f64::from(val.0[0]), f64::from(val.0[1])]
     }
 }
 
-impl Into<[f64; 3]> for Vec4 {
-    fn into(self) -> [f64; 3] {
+impl From<Vec4> for [f64; 3] {
+    fn from(val: Vec4) -> Self {
         [
-            f64::from(self.0[0]),
-            f64::from(self.0[1]),
-            f64::from(self.0[2]),
+            f64::from(val.0[0]),
+            f64::from(val.0[1]),
+            f64::from(val.0[2]),
         ]
     }
 }
 
-impl Into<[f64; 4]> for Vec4 {
-    fn into(self) -> [f64; 4] {
+impl From<Vec4> for [f64; 4] {
+    fn from(val: Vec4) -> Self {
         [
-            f64::from(self.0[0]),
-            f64::from(self.0[1]),
-            f64::from(self.0[2]),
-            f64::from(self.0[3]),
+            f64::from(val.0[0]),
+            f64::from(val.0[1]),
+            f64::from(val.0[2]),
+            f64::from(val.0[3]),
         ]
     }
 }
 
-impl Into<(f32, f32)> for Vec4 {
-    fn into(self) -> (f32, f32) {
-        (self.0[0], self.0[1])
+impl From<Vec4> for (f32, f32) {
+    fn from(val: Vec4) -> Self {
+        (val.0[0], val.0[1])
     }
 }
 
-impl Into<(f32, f32, f32)> for Vec4 {
-    fn into(self) -> (f32, f32, f32) {
-        (self.0[0], self.0[1], self.0[2])
+impl From<Vec4> for (f32, f32, f32) {
+    fn from(val: Vec4) -> Self {
+        (val.0[0], val.0[1], val.0[2])
     }
 }
 
-impl Into<(f32, f32, f32, f32)> for Vec4 {
-    fn into(self) -> (f32, f32, f32, f32) {
-        (self.0[0], self.0[1], self.0[2], self.0[3])
+impl From<Vec4> for (f32, f32, f32, f32) {
+    fn from(val: Vec4) -> Self {
+        (val.0[0], val.0[1], val.0[2], val.0[3])
     }
 }
 
-impl Into<(f64, f64)> for Vec4 {
-    fn into(self) -> (f64, f64) {
-        (f64::from(self.0[0]), f64::from(self.0[1]))
+impl From<Vec4> for (f64, f64) {
+    fn from(val: Vec4) -> Self {
+        (f64::from(val.0[0]), f64::from(val.0[1]))
     }
 }
 
-impl Into<(f64, f64, f64)> for Vec4 {
-    fn into(self) -> (f64, f64, f64) {
+impl From<Vec4> for (f64, f64, f64) {
+    fn from(val: Vec4) -> Self {
         (
-            f64::from(self.0[0]),
-            f64::from(self.0[1]),
-            f64::from(self.0[2]),
+            f64::from(val.0[0]),
+            f64::from(val.0[1]),
+            f64::from(val.0[2]),
         )
     }
 }
 
-impl Into<(f64, f64, f64, f64)> for Vec4 {
-    fn into(self) -> (f64, f64, f64, f64) {
+impl From<Vec4> for (f64, f64, f64, f64) {
+    fn from(val: Vec4) -> Self {
         (
-            f64::from(self.0[0]),
-            f64::from(self.0[1]),
-            f64::from(self.0[2]),
-            f64::from(self.0[3]),
+            f64::from(val.0[0]),
+            f64::from(val.0[1]),
+            f64::from(val.0[2]),
+            f64::from(val.0[3]),
         )
     }
 }
 
-impl Into<[u32; 2]> for Vec4 {
-    fn into(self) -> [u32; 2] {
-        [self.0[0] as u32, self.0[1] as u32]
+impl From<Vec4> for [u32; 2] {
+    fn from(val: Vec4) -> Self {
+        [val.0[0] as u32, val.0[1] as u32]
     }
 }
 
-impl Into<(u32, u32)> for Vec4 {
-    fn into(self) -> (u32, u32) {
-        (self.0[0] as u32, self.0[1] as u32)
+impl From<Vec4> for (u32, u32) {
+    fn from(val: Vec4) -> Self {
+        (val.0[0] as u32, val.0[1] as u32)
     }
 }
 
-impl Into<(u8, u8, u8, u8)> for Vec4 {
-    fn into(self) -> (u8, u8, u8, u8) {
+impl From<Vec4> for (u8, u8, u8, u8) {
+    fn from(val: Vec4) -> Self {
         (
-            (self.0[0] * 255.0) as u8,
-            (self.0[1] * 255.0) as u8,
-            (self.0[2] * 255.0) as u8,
-            (self.0[3] * 255.0) as u8,
+            (val.0[0] * 255.0) as u8,
+            (val.0[1] * 255.0) as u8,
+            (val.0[2] * 255.0) as u8,
+            (val.0[3] * 255.0) as u8,
         )
     }
 }
 
-impl Into<[u8; 4]> for Vec4 {
-    fn into(self) -> [u8; 4] {
+impl From<Vec4> for [u8; 4] {
+    fn from(val: Vec4) -> Self {
         [
-            (self.0[0] * 255.0) as u8,
-            (self.0[1] * 255.0) as u8,
-            (self.0[2] * 255.0) as u8,
-            (self.0[3] * 255.0) as u8,
+            (val.0[0] * 255.0) as u8,
+            (val.0[1] * 255.0) as u8,
+            (val.0[2] * 255.0) as u8,
+            (val.0[3] * 255.0) as u8,
         ]
     }
 }

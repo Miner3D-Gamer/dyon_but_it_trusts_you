@@ -7,7 +7,7 @@ pub fn io_error(action: &str, file: &str, err: &io::Error) -> String {
         "IO Error when attempting to {} `{}`: {}\n{}",
         action,
         file,
-        err.to_string(),
+        err,
         match err.source() {
             None => "".to_string(),
             Some(cause) => cause.to_string(),

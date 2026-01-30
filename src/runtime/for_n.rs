@@ -567,15 +567,12 @@ impl Runtime {
                         // Evaluate link items directly.
                         'inner: for item in &link.items {
                             match rt.expression(item, Side::Right)? {
-                                (Some(ref x), Flow::Continue) => match res.push(rt.get(x)) {
-                                    Err(err) => {
-                                        return Err(rt.module.error(
-                                            for_n_expr.source_range,
-                                            &format!("{}\n{}", rt.stack_trace(), err),
-                                            rt,
-                                        ))
-                                    }
-                                    Ok(()) => {}
+                                (Some(ref x), Flow::Continue) => if let Err(err) = res.push(rt.get(x)) {
+                                    return Err(rt.module.error(
+                                        for_n_expr.source_range,
+                                        &format!("{}\n{}", rt.stack_trace(), err),
+                                        rt,
+                                    ))
                                 },
                                 (x, Flow::Return) => {
                                     return Ok((x, Flow::Return));

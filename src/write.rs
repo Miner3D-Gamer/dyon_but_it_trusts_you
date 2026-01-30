@@ -521,7 +521,7 @@ fn write_item<W: io::Write>(
                 write!(w, "]")?;
             }
         }
-        if item.try_ids.iter().any(|&tr| tr == i) {
+        if item.try_ids.contains(&i) {
             write!(w, "?")?;
         }
     }
@@ -664,14 +664,12 @@ fn write_vec4<W: io::Write>(
 ) -> Result<(), io::Error> {
     let mut n = vec4.args.len();
     for expr in vec4.args.iter().rev() {
-        if let ast::Expression::Variable(ref range_var) = *expr {
-            if let (_, Variable::F64(num, _)) = **range_var {
-                if num == 0.0 {
+        if let ast::Expression::Variable(ref range_var) = *expr
+            && let (_, Variable::F64(num, _)) = **range_var
+                && num == 0.0 {
                     n -= 1;
                     continue;
                 }
-            }
-        }
         break;
     }
     write!(w, "(")?;
@@ -741,23 +739,17 @@ fn write_for<W: io::Write>(
     f: &ast::For,
     tabs: u32,
 ) -> Result<(), io::Error> {
-    if let ast::Expression::Block(ref b) = f.init {
-        if b.expressions.is_empty() {
-            if let ast::Expression::Variable(ref range_var) = f.cond {
-                if let (_, Variable::Bool(b, _)) = **range_var {
-                    if b {
-                        if let ast::Expression::Block(ref b) = f.step {
-                            if b.expressions.is_empty() {
+    if let ast::Expression::Block(ref b) = f.init
+        && b.expressions.is_empty()
+            && let ast::Expression::Variable(ref range_var) = f.cond
+                && let (_, Variable::Bool(b, _)) = **range_var
+                    && b
+                        && let ast::Expression::Block(ref b) = f.step
+                            && b.expressions.is_empty() {
                                 write!(w, "loop ")?;
                                 write_block(w, rt, &f.block, tabs + 1)?;
                                 return Ok(());
                             }
-                        }
-                    }
-                }
-            }
-        }
-    }
 
     write!(w, "for ")?;
     write_expr(w, rt, &f.init, tabs)?;
@@ -777,7 +769,7 @@ fn standard_binop(name: &Arc<String>, args: &[ast::Expression]) -> Option<ast::B
         return None;
     };
 
-    let name: &str = &**name;
+    let name: &str = name;
     Some(match name {
         "dot" => Dot,
         "cross" => Cross,
@@ -939,7 +931,7 @@ impl Comment {
 }
 
 pub fn fmt(tab: i32, text: &str) -> String {
-    let tab = tab as i32;
+    let tab = tab;
     let mut res = String::with_capacity(text.len());
     let mut tabs: i32 = 0;
     let mut newline = false;
@@ -994,10 +986,7 @@ pub fn fmt(tab: i32, text: &str) -> String {
                 (true, true) => {}
                 _ => res.push(ch),
             };
-            match ch {
-                ':' => res.push(' '),
-                _ => {}
-            }
+            if ch == ':' { res.push(' ') }
             newline = match ch {
                 '[' | '{' | '(' | ',' => true,
                 _ => false,

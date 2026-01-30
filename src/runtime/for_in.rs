@@ -227,7 +227,7 @@ impl Runtime {
         let iter = iter!(self, for_in_expr);
         let iter_val = iter_val!(iter, self, for_in_expr);
 
-        let mut min = ::std::f64::NAN;
+        let mut min = f64::NAN;
         let mut sec = None;
         // Initialize counter.
         self.local_stack
@@ -295,7 +295,7 @@ impl Runtime {
         let iter = iter!(self, for_in_expr);
         let iter_val = iter_val!(iter, self, for_in_expr);
 
-        let mut max = ::std::f64::NAN;
+        let mut max = f64::NAN;
         let mut sec = None;
         // Initialize counter.
         self.local_stack
@@ -525,15 +525,12 @@ impl Runtime {
                         // Evaluate link items directly.
                         'inner: for item in &link.items {
                             match rt.expression(item, Side::Right)? {
-                                (Some(ref x), Flow::Continue) => match res.push(rt.get(x)) {
-                                    Err(err) => {
-                                        return Err(rt.module.error(
-                                            for_in_expr.source_range,
-                                            &format!("{}\n{}", rt.stack_trace(), err),
-                                            rt,
-                                        ))
-                                    }
-                                    Ok(()) => {}
+                                (Some(ref x), Flow::Continue) => if let Err(err) = res.push(rt.get(x)) {
+                                    return Err(rt.module.error(
+                                        for_in_expr.source_range,
+                                        &format!("{}\n{}", rt.stack_trace(), err),
+                                        rt,
+                                    ))
                                 },
                                 (x, Flow::Return) => {
                                     return Ok((x, Flow::Return));

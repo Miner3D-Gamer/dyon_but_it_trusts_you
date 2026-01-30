@@ -1816,7 +1816,7 @@ impl Object {
 
     fn precompute(&self) -> Option<Variable> {
         let mut object: HashMap<_, _> = HashMap::new();
-        for &(ref key, ref value) in &self.key_values {
+        for (key, value) in &self.key_values {
             if let Some(v) = value.precompute() {
                 object.insert(key.clone(), v);
             } else {
@@ -2015,13 +2015,11 @@ impl ArrayFill {
     }
 
     fn precompute(&self) -> Option<Variable> {
-        if let Expression::Variable(ref range_var) = self.n {
-            if let (_, Variable::F64(n, _)) = **range_var {
-                if let Expression::Variable(ref x) = self.fill {
+        if let Expression::Variable(ref range_var) = self.n
+            && let (_, Variable::F64(n, _)) = **range_var
+                && let Expression::Variable(ref x) = self.fill {
                     return Some(Variable::Array(Arc::new(vec![x.1.clone(); n as usize])));
                 }
-            }
-        }
         None
     }
 
@@ -2458,12 +2456,11 @@ impl Item {
     ) {
         let st = stack.len();
         for (i, n) in stack.iter().rev().enumerate() {
-            if let Some(ref n) = *n {
-                if **n == **self.name {
+            if let Some(ref n) = *n
+                && **n == **self.name {
                     self.static_stack_id.set(Some(i + 1));
                     break;
                 }
-            }
         }
         for id in &mut self.ids {
             if id.get_locals(relative, stack, closure_stack, module, use_lookup) {
@@ -3382,12 +3379,11 @@ impl Assign {
         stack.truncate(st);
 
         // Declare new local when there is an item with no extra.
-        if let Expression::Item(ref item) = self.left {
-            if item.ids.is_empty() && self.op == AssignOp::Assign {
+        if let Expression::Item(ref item) = self.left
+            && item.ids.is_empty() && self.op == AssignOp::Assign {
                 stack.push(Some(item.name.clone()));
                 return;
             }
-        }
 
         self.left.get_locals(relative, stack, closure_stack, module, use_lookup);
         stack.truncate(st);

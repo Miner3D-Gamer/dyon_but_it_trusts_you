@@ -75,8 +75,8 @@ pub fn list_functions(module: &Module) -> Vec<Variable> {
     }
     // Sort by function names.
     functions.sort_by(|a, b| match (a, b) {
-        (&Variable::Object(ref a), &Variable::Object(ref b)) => match (&a[&name], &b[&name]) {
-            (&Variable::Str(ref a), &Variable::Str(ref b)) => a.cmp(b),
+        (Variable::Object(a), Variable::Object(b)) => match (&a[&name], &b[&name]) {
+            (Variable::Str(a), Variable::Str(b)) => a.cmp(b),
             _ => panic!("Expected two strings"),
         },
         _ => panic!("Expected two objects"),

@@ -97,7 +97,7 @@ pub fn load_text_file_from_url(url: &str) -> Result<String, String> {
         format!(
             "Error fetching file over http `{}`:\n{}\n",
             url,
-            e.to_string()
+            e
         )
     })?;
     if response.status() == StatusCode::OK {
@@ -106,7 +106,7 @@ pub fn load_text_file_from_url(url: &str) -> Result<String, String> {
             format!(
                 "Error fetching file over http `{}`:\n{}\n",
                 url,
-                e.to_string()
+                e
             )
         })?;
         Ok(data)
@@ -154,17 +154,17 @@ pub fn download_url_to_file(url: &str, file: &str) -> Result<String, String> {
         format!(
             "Error fetching file over http `{}`:\n{}\n",
             url,
-            e.to_string()
+            e
         )
     })?;
     if response.status() == StatusCode::OK {
         let mut f = File::create(file)
-            .map_err(|err| format!("Could not create file `{}`:\n{}", file, err.to_string()))?;
+            .map_err(|err| format!("Could not create file `{}`:\n{}", file, err))?;
         copy(&mut response, &mut f).map_err(|e| {
             format!(
                 "Error fetching file over http `{}`:\n{}\n",
                 url,
-                e.to_string()
+                e
             )
         })?;
         Ok(file.into())
@@ -247,11 +247,11 @@ pub fn json_from_meta_data(data: &[Variable]) -> Result<String, io::Error> {
                     "start" => {
                         first = true;
                         write_string(&mut w, name)?;
-                        write!(w, ":{}", "{")?;
+                        write!(w, ":{{")?;
                         indent += 1;
                     }
                     "end" => {
-                        write!(w, "{}", "}")?;
+                        write!(w, "}}")?;
                     }
                     "bool" => {
                         if let Variable::Bool(val, _) = arr[4] {

@@ -157,7 +157,7 @@ impl Thread {
             format!(
                 "{}\nCan not lock Thread mutex:\n{}",
                 rt.stack_trace(),
-                err.to_string()
+                err
             )
         })
     }
@@ -326,9 +326,9 @@ impl PartialEq for Variable {
             (&Variable::Return, _) => false,
             (&Variable::Bool(a, _), &Variable::Bool(b, _)) => a == b,
             (&Variable::F64(a, _), &Variable::F64(b, _)) => a == b,
-            (&Variable::Str(ref a), &Variable::Str(ref b)) => a == b,
-            (&Variable::Object(ref a), &Variable::Object(ref b)) => a == b,
-            (&Variable::Array(ref a), &Variable::Array(ref b)) => a == b,
+            (Variable::Str(a), Variable::Str(b)) => a == b,
+            (Variable::Object(a), Variable::Object(b)) => a == b,
+            (Variable::Array(a), Variable::Array(b)) => a == b,
             (&Variable::Ref(_), _) => false,
             (&Variable::UnsafeRef(_), _) => false,
             (&Variable::RustObject(_), _) => false,

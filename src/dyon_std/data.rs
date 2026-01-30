@@ -354,13 +354,12 @@ fn multi_line_comment(read: &mut ReadToken) {
         loop {
             let start = *read;
 
-            if read.tag("*/").is_none() {
-                if let Some(range) = read.tag("*") {
+            if read.tag("*/").is_none()
+                && let Some(range) = read.tag("*") {
                     *read = read.consume(range.length);
                     let (range, _) = read.until_any("*/");
                     *read = read.consume(range.length);
                 }
-            }
 
             let start_multi_line = *read;
             multi_line_comment(read);

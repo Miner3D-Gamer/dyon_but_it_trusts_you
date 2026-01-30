@@ -2,6 +2,7 @@ use std::sync::Arc;
 
 use piston_meta::bootstrap::Convert;
 use range::Range;
+
 use crate::Dfn;
 
 /// Stores a Dyon type.
@@ -51,9 +52,13 @@ impl Type {
     /// Returns an extension quantified over ad-hoc types.
     ///
     /// For example, `(vec4, vec4) -> vec4` becomes `all T { (T vec4, T vec4) -> T vec4 }`.
-    pub fn all_ext(args: Vec<Type>, ret: Type) -> (Vec<Arc<String>>, Vec<Type>, Type) {
-        use crate::T;
+    pub fn all_ext(
+        args: Vec<Type>,
+        ret: Type,
+    ) -> (Vec<Arc<String>>, Vec<Type>, Type) {
         use Type::AdHoc;
+
+        use crate::T;
 
         (
             vec![T.clone()],
@@ -136,7 +141,7 @@ impl Type {
                     res
                 }
             }
-            AdHoc(ref ad, ref ty) => (&**ad).clone() + " " + &ty.description(),
+            AdHoc(ref ad, ref ty) => (**ad).clone() + " " + &ty.description(),
             Closure(ref closure) => {
                 let mut s = String::new();
                 s.push_str("\\(");
@@ -199,12 +204,13 @@ impl Type {
         };
         match (self, refine) {
             (
-                &Type::AdHoc(ref a_name, ref a_inner_ty),
-                &Type::AdHoc(ref b_name, ref b_inner_ty),
+                Type::AdHoc(a_name, a_inner_ty),
+                Type::AdHoc(b_name, b_inner_ty),
             ) => {
                 for i in 0..names.len() {
                     if a_name == &names[i] {
-                        let new_inner = a_inner_ty.bind_ty_vars(b_inner_ty, names, ty_vars)?;
+                        let new_inner = a_inner_ty
+                            .bind_ty_vars(b_inner_ty, names, ty_vars)?;
                         if let Some(ref existing_name) = ty_vars[i] {
                             if existing_name != b_name
                                 && new_inner.goes_with(b_inner_ty)
@@ -215,28 +221,37 @@ impl Type {
                                     existing_name, b_name
                                 ));
                             } else {
-                                return Ok(Type::AdHoc(existing_name.clone(), Box::new(new_inner)));
+                                return Ok(Type::AdHoc(
+                                    existing_name.clone(),
+                                    Box::new(new_inner),
+                                ));
                             }
                         } else {
                             ty_vars[i] = Some(b_name.clone());
                             return Ok(Type::AdHoc(
                                 b_name.clone(),
-                                Box::new(a_inner_ty.bind_ty_vars(b_inner_ty, names, ty_vars)?),
+                                Box::new(a_inner_ty.bind_ty_vars(
+                                    b_inner_ty, names, ty_vars,
+                                )?),
                             ));
                         }
                     }
                 }
                 Ok(Type::AdHoc(
                     a_name.clone(),
-                    Box::new(a_inner_ty.bind_ty_vars(b_inner_ty, names, ty_vars)?),
+                    Box::new(
+                        a_inner_ty.bind_ty_vars(b_inner_ty, names, ty_vars)?,
+                    ),
                 ))
             }
-            (&Type::AdHoc(ref a_name, ref a_inner_ty), b) => {
+            (Type::AdHoc(a_name, a_inner_ty), b) => {
                 for i in 0..names.len() {
                     if a_name == &names[i] {
-                        let new_inner = a_inner_ty.bind_ty_vars(refine, names, ty_vars)?;
+                        let new_inner =
+                            a_inner_ty.bind_ty_vars(refine, names, ty_vars)?;
                         if let Some(ref n) = ty_vars[i] {
-                            if new_inner.goes_with(b) && !new_inner.ambiguous(b) {
+                            if new_inner.goes_with(b) && !new_inner.ambiguous(b)
+                            {
                                 return Err(format!(
                                     "Type mismatch (#1600): Expected `{}`, found no ad-hoc type",
                                     n
@@ -255,25 +270,19 @@ impl Type {
 
     /// Inserts variable name, replacing ad-hoc type name.
     pub fn insert_var(&mut self, name: &Arc<String>, val: &Arc<String>) {
-        match *self {
-            Type::AdHoc(ref mut n, ref mut inner_ty) => {
-                if n == name {
-                    *n = val.clone();
-                }
-                inner_ty.insert_var(name, val)
+        if let Type::AdHoc(ref mut n, ref mut inner_ty) = *self {
+            if n == name {
+                *n = val.clone();
             }
-            _ => {}
+            inner_ty.insert_var(name, val)
         }
     }
 
     /// Inserts a none ad-hoc variable.
     pub fn insert_none_var(&mut self, name: &Arc<String>) {
-        match *self {
-            Type::AdHoc(_, ref mut inner_ty) => {
-                inner_ty.insert_none_var(name);
-                *self = (**inner_ty).clone();
-            }
-            _ => {}
+        if let Type::AdHoc(_, ref mut inner_ty) = *self {
+            inner_ty.insert_none_var(name);
+            *self = (**inner_ty).clone();
         }
     }
 
@@ -286,15 +295,17 @@ impl Type {
         use self::Type::*;
 
         match (self, refine) {
-            (&AdHoc(ref xa, ref xb), &AdHoc(ref ya, ref yb)) if xa == ya => xb.ambiguous(yb),
-            (&AdHoc(_, ref x), y) if x.goes_with(y) => true,
-            (&Array(ref x), &Array(ref y)) if x.ambiguous(y) => true,
-            (&Option(ref x), &Option(ref y)) if x.ambiguous(y) => true,
-            (&Result(ref x), &Result(ref y)) if x.ambiguous(y) => true,
+            (AdHoc(xa, xb), AdHoc(ya, yb)) if xa == ya => {
+                xb.ambiguous(yb)
+            }
+            (AdHoc(_, x), y) if x.goes_with(y) => true,
+            (Array(x), Array(y)) if x.ambiguous(y) => true,
+            (Option(x), Option(y)) if x.ambiguous(y) => true,
+            (Result(x), Result(y)) if x.ambiguous(y) => true,
             #[cfg(all(not(target_family = "wasm"), feature = "threading"))]
-            (&Thread(ref x), &Thread(ref y)) if x.ambiguous(y) => true,
+            (Thread(x), Thread(y)) if x.ambiguous(y) => true,
             #[cfg(all(not(target_family = "wasm"), feature = "threading"))]
-            (&In(ref x), &In(ref y)) if x.ambiguous(y) => true,
+            (In(x), In(y)) if x.ambiguous(y) => true,
             (&Bool, &Any) => true,
             (&F64, &Any) => true,
             (&Str, &Any) => true,
@@ -355,7 +366,7 @@ impl Type {
             &Any => *other != Void,
             // Void only goes with void.
             &Void => *other == Void,
-            &Array(ref arr) => {
+            Array(arr) => {
                 if let Array(ref other_arr) = *other {
                     arr.goes_with(other_arr)
                 } else {
@@ -369,14 +380,14 @@ impl Type {
                     matches!(*other, Any)
                 }
             }
-            &Option(ref opt) => {
+            Option(opt) => {
                 if let Option(ref other_opt) = *other {
                     opt.goes_with(other_opt)
                 } else {
                     matches!(*other, Any)
                 }
             }
-            &Result(ref res) => {
+            Result(res) => {
                 if let Result(ref other_res) = *other {
                     res.goes_with(other_res)
                 } else if let Any = *other {
@@ -386,7 +397,7 @@ impl Type {
                 }
             }
             #[cfg(all(not(target_family = "wasm"), feature = "threading"))]
-            &Thread(ref thr) => {
+            Thread(thr) => {
                 if let Thread(ref other_thr) = *other {
                     thr.goes_with(other_thr)
                 } else if let Any = *other {
@@ -396,7 +407,7 @@ impl Type {
                 }
             }
             #[cfg(all(not(target_family = "wasm"), feature = "threading"))]
-            &In(ref in_ty) => {
+            In(in_ty) => {
                 if let In(ref other_ty) = *other {
                     in_ty.goes_with(other_ty)
                 } else if let Any = *other {
@@ -405,7 +416,7 @@ impl Type {
                     false
                 }
             }
-            &Closure(ref cl) => {
+            Closure(cl) => {
                 if let Closure(ref other_cl) = *other {
                     if cl.tys.len() != other_cl.tys.len() {
                         return false;
@@ -428,7 +439,7 @@ impl Type {
                     false
                 }
             }
-            &AdHoc(ref name, ref ty) => {
+            AdHoc(name, ty) => {
                 if let AdHoc(ref other_name, ref other_ty) = *other {
                     name == other_name && ty.goes_with(other_ty)
                 } else if let Void = *other {
@@ -449,7 +460,10 @@ impl Type {
         use self::Type::*;
 
         match (self, other) {
-            (&AdHoc(ref name, ref ty), &AdHoc(ref other_name, ref other_ty)) => {
+            (
+                AdHoc(name, ty),
+                AdHoc(other_name, other_ty),
+            ) => {
                 if name != other_name {
                     return false;
                 }
@@ -518,37 +532,47 @@ impl Type {
             } else if let Ok((range, _)) = convert.meta_bool("obj_any") {
                 convert.update(range);
                 ty = Some(Type::Object);
-            } else if let Ok((range, val)) = Type::from_meta_data("opt", convert, ignored) {
+            } else if let Ok((range, val)) =
+                Type::from_meta_data("opt", convert, ignored)
+            {
                 convert.update(range);
                 ty = Some(Type::Option(Box::new(val)));
-            } else if let Ok((range, val)) = Type::from_meta_data("res", convert, ignored) {
+            } else if let Ok((range, val)) =
+                Type::from_meta_data("res", convert, ignored)
+            {
                 convert.update(range);
                 ty = Some(Type::Result(Box::new(val)));
-            } else if let Ok((range, val)) = Type::from_meta_data("arr", convert, ignored) {
+            } else if let Ok((range, val)) =
+                Type::from_meta_data("arr", convert, ignored)
+            {
                 convert.update(range);
                 ty = Some(Type::Array(Box::new(val)));
             } else if let Ok((range, val)) = convert.meta_string("ad_hoc") {
                 convert.update(range);
-                let inner_ty =
-                    if let Ok((range, val)) = Type::from_meta_data("ad_hoc_ty", convert, ignored) {
-                        convert.update(range);
-                        val
-                    } else {
-                        Type::Object
-                    };
+                let inner_ty = if let Ok((range, val)) =
+                    Type::from_meta_data("ad_hoc_ty", convert, ignored)
+                {
+                    convert.update(range);
+                    val
+                } else {
+                    Type::Object
+                };
                 ty = Some(Type::AdHoc(val, Box::new(inner_ty)));
             } else if let Ok(range) = convert.start_node("closure_type") {
                 convert.update(range);
                 let mut lts = vec![];
                 let mut tys = vec![];
-                while let Ok((range, val)) = Type::from_meta_data("cl_arg", convert, ignored) {
+                while let Ok((range, val)) =
+                    Type::from_meta_data("cl_arg", convert, ignored)
+                {
                     use crate::Lt;
 
                     convert.update(range);
                     lts.push(Lt::Default);
                     tys.push(val);
                 }
-                let (range, ret) = Type::from_meta_data("cl_ret", convert, ignored)?;
+                let (range, ret) =
+                    Type::from_meta_data("cl_ret", convert, ignored)?;
                 convert.update(range);
                 let range = convert.end_node("closure_type")?;
                 convert.update(range);
@@ -560,27 +584,44 @@ impl Type {
                     lazy: crate::LAZY_NO,
                 })));
             } else {
+                #[allow(clippy::never_loop)]
                 loop {
-                    #[cfg(all(not(target_family = "wasm"), feature = "threading"))]
+                    #[cfg(all(
+                        not(target_family = "wasm"),
+                        feature = "threading"
+                    ))]
                     if let Ok((range, _)) = convert.meta_bool("thr_any") {
                         convert.update(range);
                         ty = Some(Type::Thread(Box::new(Type::Any)));
                         break;
                     }
-                    #[cfg(all(not(target_family = "wasm"), feature = "threading"))]
-                    if let Ok((range, val)) = Type::from_meta_data("thr", convert, ignored) {
+                    #[cfg(all(
+                        not(target_family = "wasm"),
+                        feature = "threading"
+                    ))]
+                    if let Ok((range, val)) =
+                        Type::from_meta_data("thr", convert, ignored)
+                    {
                         convert.update(range);
                         ty = Some(Type::Thread(Box::new(val)));
                         break;
                     }
-                    #[cfg(all(not(target_family = "wasm"), feature = "threading"))]
+                    #[cfg(all(
+                        not(target_family = "wasm"),
+                        feature = "threading"
+                    ))]
                     if let Ok((range, _)) = convert.meta_bool("in_any") {
                         convert.update(range);
                         ty = Some(Type::In(Box::new(Type::Any)));
                         break;
                     }
-                    #[cfg(all(not(target_family = "wasm"), feature = "threading"))]
-                    if let Ok((range, val)) = Type::from_meta_data("in", convert, ignored) {
+                    #[cfg(all(
+                        not(target_family = "wasm"),
+                        feature = "threading"
+                    ))]
+                    if let Ok((range, val)) =
+                        Type::from_meta_data("in", convert, ignored)
+                    {
                         convert.update(range);
                         ty = Some(Type::In(Box::new(val)));
                         break;

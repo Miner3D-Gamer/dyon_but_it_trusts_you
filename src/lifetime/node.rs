@@ -161,12 +161,7 @@ impl Node {
     }
 
     pub fn find_child_by_kind(&self, nodes: &[Node], kind: Kind) -> Option<usize> {
-        for &ch in &self.children {
-            if nodes[ch].kind == kind {
-                return Some(ch);
-            }
-        }
-        None
+        self.children.iter().find(|&&ch| nodes[ch].kind == kind).copied()
     }
 
     pub fn item_ids(&self) -> bool {
@@ -176,8 +171,8 @@ impl Node {
     pub fn inner_type(&self, ty: &Type) -> Type {
         if self.try_flag {
             match ty {
-                &Type::Option(ref ty) => (**ty).clone(),
-                &Type::Result(ref ty) => (**ty).clone(),
+                Type::Option(ty) => (**ty).clone(),
+                Type::Result(ty) => (**ty).clone(),
                 x => x.clone(),
             }
         } else {
@@ -349,8 +344,8 @@ impl Node {
                     // If there is no return lifetime on the declared argument,
                     // there is no need to check it, because the computed value
                     // does not depend on the lifetime of that argument.
-                    if let Some(declaration) = self.declaration {
-                        if let Some(&arg) = nodes[declaration]
+                    if let Some(declaration) = self.declaration
+                        && let Some(&arg) = nodes[declaration]
                             .children
                             .iter()
                             .filter(|&&i| nodes[i].kind == Kind::Arg)
@@ -364,7 +359,6 @@ impl Node {
                                 }
                             }
                         }
-                    }
                     call_arg_ind += 1;
                 }
                 x => panic!(
@@ -397,11 +391,10 @@ pub(crate) fn convert_meta_data(
     let ignored = &mut vec![];
     let mut skip: Option<usize> = None;
     for (i, d) in data.iter().enumerate() {
-        if let Some(j) = skip {
-            if j > i {
+        if let Some(j) = skip
+            && j > i {
                 continue;
             }
-        }
         match d.data {
             MetaData::StartNode(ref kind_name) => {
                 let kind = match Kind::new(kind_name) {

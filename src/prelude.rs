@@ -94,9 +94,9 @@ impl Dfn {
 
 /// Stores a prelude, used to load standard intrinsics and type check new modules.
 pub struct Prelude {
-    pub(crate) functions: HashMap<Arc<String>, usize>,
-    pub(crate) list: Vec<Dfn>,
-    pub(crate) namespaces: Vec<(Arc<Vec<Arc<String>>>, Arc<String>)>,
+    pub functions: HashMap<Arc<String>, usize>,
+    pub list: Vec<Dfn>,
+    pub namespaces: Vec<(Arc<Vec<Arc<String>>>, Arc<String>)>,
 }
 
 impl Default for Prelude {

@@ -4,7 +4,7 @@ extern crate range;
 use self::kind::Kind;
 use self::lt::{arg_lifetime, compare_lifetimes, Lifetime};
 use self::node::convert_meta_data;
-pub(crate) use self::node::Node;
+pub use self::node::Node;
 use self::piston_meta::MetaData;
 use self::range::Range;
 use std::collections::{HashMap, HashSet};
@@ -32,7 +32,7 @@ pub fn check(
 }
 
 // Core lifetime and type check.
-pub(crate) fn check_core(
+pub fn check_core(
     nodes: &mut Vec<Node>,
     data: &[Range<MetaData>],
     prelude: &Prelude,
@@ -1145,7 +1145,7 @@ pub(crate) fn check_core(
 
 // Search for suggestions using matching function signature.
 // Meant to be put last in error message.
-fn suggestions(
+pub fn suggestions(
     name: &str,
     function_lookup: &HashMap<Arc<String>, usize>,
     prelude: &Prelude,
@@ -1184,7 +1184,7 @@ fn suggestions(
 /// Maps (function, argument_name) => (argument, index)
 pub type ArgNames = HashMap<(usize, Arc<String>), (usize, usize)>;
 
-pub(crate) fn to_array(nodes: &[Node]) -> Vec<crate::Variable> {
+pub fn to_array(nodes: &[Node]) -> Vec<crate::Variable> {
     use crate::embed::PushVariable;
     use crate::Variable;
 

@@ -9,7 +9,7 @@ use crate::ast::{AssignOp, BinOp};
 use crate::{Lt, Type};
 
 #[derive(Debug)]
-pub(crate) struct Node {
+pub struct Node {
     /// The kind of node.
     pub kind: Kind,
     /// The namespace alias.
@@ -383,7 +383,7 @@ impl Node {
     }
 }
 
-pub(crate) fn convert_meta_data(
+pub fn convert_meta_data(
     nodes: &mut Vec<Node>,
     data: &[Range<MetaData>],
 ) -> Result<(), Range<String>> {

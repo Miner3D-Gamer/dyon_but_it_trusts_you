@@ -22,7 +22,7 @@ pub fn infer(block: &Block, name: &str) -> Option<Expression> {
     })
 }
 
-fn infer_expr(expr: &Expression, name: &str, decls: &mut Vec<Arc<String>>) -> Option<Item> {
+pub fn infer_expr(expr: &Expression, name: &str, decls: &mut Vec<Arc<String>>) -> Option<Item> {
     use super::Expression::*;
 
     match *expr {
@@ -293,7 +293,7 @@ fn infer_expr(expr: &Expression, name: &str, decls: &mut Vec<Arc<String>>) -> Op
     None
 }
 
-fn infer_item(item: &Item, name: &str, decls: &mut Vec<Arc<String>>) -> Option<Item> {
+pub fn infer_item(item: &Item, name: &str, decls: &mut Vec<Arc<String>>) -> Option<Item> {
     if item.ids.is_empty() {
         return None;
     }
@@ -328,7 +328,7 @@ fn infer_item(item: &Item, name: &str, decls: &mut Vec<Arc<String>>) -> Option<I
     None
 }
 
-fn infer_call(call: &Call, name: &str, decls: &mut Vec<Arc<String>>) -> Option<Item> {
+pub fn infer_call(call: &Call, name: &str, decls: &mut Vec<Arc<String>>) -> Option<Item> {
     for arg in &call.args {
         let res = infer_expr(arg, name, decls);
         if res.is_some() {
@@ -338,7 +338,7 @@ fn infer_call(call: &Call, name: &str, decls: &mut Vec<Arc<String>>) -> Option<I
     None
 }
 
-fn infer_call_closure(
+pub fn infer_call_closure(
     call: &CallClosure,
     name: &str,
     decls: &mut Vec<Arc<String>>,
@@ -356,7 +356,7 @@ fn infer_call_closure(
     None
 }
 
-fn infer_for_n(for_n_expr: &ForN, name: &str, decls: &mut Vec<Arc<String>>) -> Option<Item> {
+pub fn infer_for_n(for_n_expr: &ForN, name: &str, decls: &mut Vec<Arc<String>>) -> Option<Item> {
     // Check for declaration of same name.
     if &**for_n_expr.name == name {
         return None;
@@ -386,7 +386,7 @@ fn infer_for_n(for_n_expr: &ForN, name: &str, decls: &mut Vec<Arc<String>>) -> O
     res
 }
 
-fn infer_block(block: &Block, name: &str, decls: &mut Vec<Arc<String>>) -> Option<Item> {
+pub fn infer_block(block: &Block, name: &str, decls: &mut Vec<Arc<String>>) -> Option<Item> {
     let f = |decls: &mut Vec<Arc<String>>| -> Option<Item> {
         for expr in &block.expressions {
             if let Expression::Assign(ref assign_expr) = *expr {

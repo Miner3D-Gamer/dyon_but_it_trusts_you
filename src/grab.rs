@@ -693,7 +693,7 @@ pub fn grab_expr(
     }
 }
 
-fn grab_block(
+pub fn grab_block(
     level: u16,
     rt: &mut Runtime,
     block: &ast::Block,
@@ -717,7 +717,7 @@ fn grab_block(
     ))
 }
 
-fn grab_item(
+pub fn grab_item(
     level: u16,
     rt: &mut Runtime,
     item: &ast::Item,
@@ -751,7 +751,7 @@ fn grab_item(
     ))
 }
 
-fn grab_for_n(
+pub fn grab_for_n(
     level: u16,
     rt: &mut Runtime,
     for_n: &ast::ForN,

@@ -78,7 +78,7 @@ macro_rules! iter_val_inc(
 );
 
 impl Runtime {
-    pub(crate) fn for_in_expr(
+    pub fn for_in_expr(
         &mut self,
         for_in_expr: &ast::ForIn,
     ) -> Result<(Option<Variable>, Flow), String> {
@@ -115,7 +115,7 @@ impl Runtime {
         Ok((None, flow))
     }
 
-    pub(crate) fn sum_in_expr(
+    pub fn sum_in_expr(
         &mut self,
         for_in_expr: &ast::ForIn,
     ) -> Result<(Option<Variable>, Flow), String> {
@@ -166,7 +166,7 @@ impl Runtime {
         Ok((Some(Variable::f64(sum)), flow))
     }
 
-    pub(crate) fn prod_in_expr(
+    pub fn prod_in_expr(
         &mut self,
         for_in_expr: &ast::ForIn,
     ) -> Result<(Option<Variable>, Flow), String> {
@@ -217,7 +217,7 @@ impl Runtime {
         Ok((Some(Variable::f64(prod)), flow))
     }
 
-    pub(crate) fn min_in_expr(
+    pub fn min_in_expr(
         &mut self,
         for_in_expr: &ast::ForIn,
     ) -> Result<(Option<Variable>, Flow), String> {
@@ -285,7 +285,7 @@ impl Runtime {
         Ok((Some(Variable::F64(min, sec)), flow))
     }
 
-    pub(crate) fn max_in_expr(
+    pub fn max_in_expr(
         &mut self,
         for_in_expr: &ast::ForIn,
     ) -> Result<(Option<Variable>, Flow), String> {
@@ -353,7 +353,7 @@ impl Runtime {
         Ok((Some(Variable::F64(max, sec)), flow))
     }
 
-    pub(crate) fn any_in_expr(
+    pub fn any_in_expr(
         &mut self,
         for_in_expr: &ast::ForIn,
     ) -> Result<(Option<Variable>, Flow), String> {
@@ -423,7 +423,7 @@ impl Runtime {
         Ok((Some(Variable::Bool(any, sec)), flow))
     }
 
-    pub(crate) fn all_in_expr(
+    pub fn all_in_expr(
         &mut self,
         for_in_expr: &ast::ForIn,
     ) -> Result<(Option<Variable>, Flow), String> {
@@ -493,7 +493,7 @@ impl Runtime {
         Ok((Some(Variable::Bool(all, sec)), flow))
     }
 
-    pub(crate) fn link_for_in_expr(
+    pub fn link_for_in_expr(
         &mut self,
         for_in_expr: &ast::ForIn,
     ) -> Result<(Option<Variable>, Flow), String> {
@@ -624,7 +624,7 @@ impl Runtime {
         }
     }
 
-    pub(crate) fn sift_in_expr(
+    pub fn sift_in_expr(
         &mut self,
         for_in_expr: &ast::ForIn,
     ) -> Result<(Option<Variable>, Flow), String> {

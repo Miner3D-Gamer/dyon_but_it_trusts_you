@@ -107,7 +107,7 @@ macro_rules! inc(
 );
 
 impl Runtime {
-    pub(crate) fn for_n_expr(
+    pub fn for_n_expr(
         &mut self,
         for_n_expr: &ast::ForN,
     ) -> Result<(Option<Variable>, Flow), String> {
@@ -144,7 +144,7 @@ impl Runtime {
         Ok((None, flow))
     }
 
-    pub(crate) fn sum_n_expr(
+    pub fn sum_n_expr(
         &mut self,
         for_n_expr: &ast::ForN,
     ) -> Result<(Option<Variable>, Flow), String> {
@@ -200,7 +200,7 @@ impl Runtime {
         Ok((Some(Variable::f64(sum)), flow))
     }
 
-    pub(crate) fn prod_n_expr(
+    pub fn prod_n_expr(
         &mut self,
         for_n_expr: &ast::ForN,
     ) -> Result<(Option<Variable>, Flow), String> {
@@ -256,7 +256,7 @@ impl Runtime {
         Ok((Some(Variable::f64(prod)), flow))
     }
 
-    pub(crate) fn min_n_expr(
+    pub fn min_n_expr(
         &mut self,
         for_n_expr: &ast::ForN,
     ) -> Result<(Option<Variable>, Flow), String> {
@@ -324,7 +324,7 @@ impl Runtime {
         Ok((Some(Variable::F64(min, sec)), flow))
     }
 
-    pub(crate) fn max_n_expr(
+    pub fn max_n_expr(
         &mut self,
         for_n_expr: &ast::ForN,
     ) -> Result<(Option<Variable>, Flow), String> {
@@ -393,7 +393,7 @@ impl Runtime {
         Ok((Some(Variable::F64(max, sec)), flow))
     }
 
-    pub(crate) fn any_n_expr(
+    pub fn any_n_expr(
         &mut self,
         for_n_expr: &ast::ForN,
     ) -> Result<(Option<Variable>, Flow), String> {
@@ -463,7 +463,7 @@ impl Runtime {
         Ok((Some(Variable::Bool(any, sec)), flow))
     }
 
-    pub(crate) fn all_n_expr(
+    pub fn all_n_expr(
         &mut self,
         for_n_expr: &ast::ForN,
     ) -> Result<(Option<Variable>, Flow), String> {
@@ -533,7 +533,7 @@ impl Runtime {
         Ok((Some(Variable::Bool(all, sec)), flow))
     }
 
-    pub(crate) fn link_for_n_expr(
+    pub fn link_for_n_expr(
         &mut self,
         for_n_expr: &ast::ForN,
     ) -> Result<(Option<Variable>, Flow), String> {
@@ -642,7 +642,7 @@ impl Runtime {
         }
     }
 
-    pub(crate) fn sift_n_expr(
+    pub fn sift_n_expr(
         &mut self,
         for_n_expr: &ast::ForN,
     ) -> Result<(Option<Variable>, Flow), String> {
@@ -687,7 +687,7 @@ impl Runtime {
         Ok((Some(Variable::Array(Arc::new(res))), flow))
     }
 
-    pub(crate) fn sum_vec4_n_expr(
+    pub fn sum_vec4_n_expr(
         &mut self,
         for_n_expr: &ast::ForN,
     ) -> Result<(Option<Variable>, Flow), String> {
@@ -747,7 +747,7 @@ impl Runtime {
         Ok((Some(Variable::Vec4(sum)), flow))
     }
 
-    pub(crate) fn prod_vec4_n_expr(
+    pub fn prod_vec4_n_expr(
         &mut self,
         for_n_expr: &ast::ForN,
     ) -> Result<(Option<Variable>, Flow), String> {

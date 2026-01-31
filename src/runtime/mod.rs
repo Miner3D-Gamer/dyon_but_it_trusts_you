@@ -43,7 +43,7 @@ pub struct Call {
     /// was .0
     pub fn_name: Arc<String>,
     /// The index of the relative function in module.
-    pub(crate) index: usize,
+    pub index: usize,
     /// ???
     pub file: Option<Arc<String>>,
     /// was .1
@@ -71,31 +71,34 @@ pub fn clone_tuntime_call(call: &Call) -> Call {
 }
 
 lazy_static! {
-    pub(crate) static ref TEXT_TYPE: Arc<String> = Arc::new("string".into());
-    pub(crate) static ref F64_TYPE: Arc<String> = Arc::new("number".into());
-    pub(crate) static ref VEC4_TYPE: Arc<String> = Arc::new("vec4".into());
-    pub(crate) static ref MAT4_TYPE: Arc<String> = Arc::new("mat4".into());
-    pub(crate) static ref RETURN_TYPE: Arc<String> = Arc::new("return".into());
-    pub(crate) static ref BOOL_TYPE: Arc<String> = Arc::new("boolean".into());
-    pub(crate) static ref OBJECT_TYPE: Arc<String> = Arc::new("object".into());
-    pub(crate) static ref LINK_TYPE: Arc<String> = Arc::new("link".into());
-    pub(crate) static ref ARRAY_TYPE: Arc<String> = Arc::new("array".into());
-    pub(crate) static ref UNSAFE_REF_TYPE: Arc<String> =
+    pub static ref TEXT_TYPE: Arc<String> = Arc::new("string".into());
+    pub static ref F64_TYPE: Arc<String> = Arc::new("number".into());
+    pub static ref VEC4_TYPE: Arc<String> = Arc::new("vec4".into());
+    pub static ref MAT4_TYPE: Arc<String> = Arc::new("mat4".into());
+    pub static ref RETURN_TYPE: Arc<String> = Arc::new("return".into());
+    pub static ref BOOL_TYPE: Arc<String> = Arc::new("boolean".into());
+    pub static ref OBJECT_TYPE: Arc<String> = Arc::new("object".into());
+    pub static ref LINK_TYPE: Arc<String> = Arc::new("link".into());
+    pub static ref ARRAY_TYPE: Arc<String> = Arc::new("array".into());
+    pub static ref UNSAFE_REF_TYPE: Arc<String> =
         Arc::new("unsafe_ref".into());
-    pub(crate) static ref REF_TYPE: Arc<String> = Arc::new("ref".into());
-    pub(crate) static ref RUST_OBJECT_TYPE: Arc<String> =
+    pub static ref REF_TYPE: Arc<String> = Arc::new("ref".into());
+    pub static ref RUST_OBJECT_TYPE: Arc<String> =
         Arc::new("rust_object".into());
-    pub(crate) static ref OPTION_TYPE: Arc<String> = Arc::new("option".into());
-    pub(crate) static ref RESULT_TYPE: Arc<String> = Arc::new("result".into());
-    pub(crate) static ref THREAD_TYPE: Arc<String> = Arc::new("thread".into());
-    pub(crate) static ref CLOSURE_TYPE: Arc<String> =
+    pub static ref OPTION_TYPE: Arc<String> = Arc::new("option".into());
+    pub static ref RESULT_TYPE: Arc<String> = Arc::new("result".into());
+    pub static ref THREAD_TYPE: Arc<String> = Arc::new("thread".into());
+    pub static ref CLOSURE_TYPE: Arc<String> =
         Arc::new("closure".into());
-    pub(crate) static ref IN_TYPE: Arc<String> = Arc::new("in".into());
-    pub(crate) static ref MAIN: Arc<String> = Arc::new("main".into());
+    pub static ref IN_TYPE: Arc<String> = Arc::new("in".into());
+    pub static ref MAIN: Arc<String> = Arc::new("main".into());
 }
 
 #[cfg(feature = "dynload")]
-fn file_lookup_module(source: &str, target: &mut String) -> Result<(), String> {
+pub fn file_lookup_module(
+    source: &str,
+    target: &mut String,
+) -> Result<(), String> {
     if cfg!(feature = "file") {
         use std::{fs::File, io::Read};
 
@@ -127,7 +130,7 @@ pub struct Runtime {
     pub current_stack: Vec<(Arc<String>, usize)>,
     #[cfg(feature = "rand")]
     #[cfg(not(target_family = "wasm"))]
-    pub(crate) rng: rand::rngs::StdRng,
+    pub rng: rand::rngs::StdRng,
     /// The module lookup instance
     #[cfg(feature = "dynload")]
     pub module_lookup:
@@ -608,7 +611,7 @@ impl Runtime {
         }
     }
 
-    pub(crate) fn expression_module(
+    pub fn expression_module(
         &mut self,
         expr: &ast::Expression,
         side: Side,
@@ -629,7 +632,7 @@ impl Runtime {
         ))
     }
 
-    pub(crate) fn expression(
+    pub fn expression(
         &mut self,
         expr: &ast::Expression,
         side: Side,
@@ -3350,11 +3353,11 @@ impl Runtime {
         ))
     }
 
-    pub(crate) fn stack_trace(&self) -> String {
+    pub fn stack_trace(&self) -> String {
         stack_trace(&self.call_stack)
     }
 
-    pub(crate) fn get_module(
+    pub fn get_module(
         &self,
         source: &str,
         target: &mut String,
@@ -3362,8 +3365,8 @@ impl Runtime {
         (self.module_lookup)(source, target)
     }
 }
-
-fn stack_trace(call_stack: &[Call]) -> String {
+/// Get a string stack trace from a list of [`Call`]
+pub fn stack_trace(call_stack: &[Call]) -> String {
     let mut s = String::new();
     for call in call_stack.iter() {
         s.push_str(&call.fn_name);

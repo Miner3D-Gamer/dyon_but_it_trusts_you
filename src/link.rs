@@ -25,7 +25,7 @@ impl Block {
         }
     }
 
-    pub(crate) fn var(&self, ind: u8) -> Variable {
+    pub fn var(&self, ind: u8) -> Variable {
         use std::mem::transmute;
 
         let k = ind as usize;
@@ -130,10 +130,10 @@ impl fmt::Debug for Block {
 }
 
 #[derive(Debug, Clone)]
-pub(crate) struct Slice {
-    pub(crate) block: Arc<Block>,
-    pub(crate) start: u8,
-    pub(crate) end: u8,
+pub struct Slice {
+    pub block: Arc<Block>,
+    pub start: u8,
+    pub end: u8,
 }
 
 impl Slice {
@@ -149,7 +149,7 @@ impl Slice {
 /// Stores a link structure.
 #[derive(Debug, Clone)]
 pub struct Link {
-    pub(crate) slices: Vec<Slice>,
+    pub slices: Vec<Slice>,
 }
 
 impl Default for Link {

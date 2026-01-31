@@ -52,7 +52,7 @@ pub fn check(f: &ast::Function, args: &Array) -> Result<(), String> {
     Ok(())
 }
 
-fn min_ref(v: &Variable, min: &mut Option<usize>) {
+pub fn min_ref(v: &Variable, min: &mut Option<usize>) {
     use crate::Variable::*;
 
     match *v {

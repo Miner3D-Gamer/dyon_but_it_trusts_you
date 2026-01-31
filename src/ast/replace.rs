@@ -295,7 +295,7 @@ pub fn number(expr: &Expression, name: &Arc<String>, val: f64) -> Expression {
     }
 }
 
-fn number_call(call_expr: &Call, name: &Arc<String>, val: f64) -> Call {
+pub fn number_call(call_expr: &Call, name: &Arc<String>, val: f64) -> Call {
     let mut new_args: Vec<Expression> = vec![];
     for arg in &call_expr.args {
         new_args.push(number(arg, name, val));
@@ -308,7 +308,7 @@ fn number_call(call_expr: &Call, name: &Arc<String>, val: f64) -> Call {
     }
 }
 
-fn number_call_closure(call_expr: &CallClosure, name: &Arc<String>, val: f64) -> CallClosure {
+pub fn number_call_closure(call_expr: &CallClosure, name: &Arc<String>, val: f64) -> CallClosure {
     let mut new_args: Vec<Expression> = vec![];
     for arg in &call_expr.args {
         new_args.push(number(arg, name, val));
@@ -320,7 +320,7 @@ fn number_call_closure(call_expr: &CallClosure, name: &Arc<String>, val: f64) ->
     }
 }
 
-fn number_block(block: &Block, name: &Arc<String>, val: f64) -> Block {
+pub fn number_block(block: &Block, name: &Arc<String>, val: f64) -> Block {
     let mut new_expressions: Vec<Expression> = vec![];
     let mut just_clone = false;
     for expr in &block.expressions {
@@ -350,7 +350,7 @@ fn number_block(block: &Block, name: &Arc<String>, val: f64) -> Block {
     }
 }
 
-fn number_for_n(for_n_expr: &ForN, name: &Arc<String>, val: f64) -> ForN {
+pub fn number_for_n(for_n_expr: &ForN, name: &Arc<String>, val: f64) -> ForN {
     if &for_n_expr.name == name {
         for_n_expr.clone()
     } else {

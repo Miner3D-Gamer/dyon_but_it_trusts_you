@@ -2207,10 +2207,10 @@ pub enum BinOp {
     NotEqual,
 }
 
-pub(crate) const BINOP_PREC_POW: u8 = 3;
-pub(crate) const BINOP_PREC_MUL: u8 = 2;
-pub(crate) const BINOP_PREC_ADD: u8 = 1;
-pub(crate) const BINOP_PREC_EQ: u8 = 0;
+pub const BINOP_PREC_POW: u8 = 3;
+pub const BINOP_PREC_MUL: u8 = 2;
+pub const BINOP_PREC_ADD: u8 = 1;
+pub const BINOP_PREC_EQ: u8 = 0;
 
 impl BinOp {
     /// Returns symbol of binary operator.

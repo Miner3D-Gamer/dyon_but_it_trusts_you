@@ -3,11 +3,11 @@ use super::*;
 /// Stores functions for a Dyon module.
 #[derive(Clone)]
 pub struct Module {
-    pub(crate) functions: Vec<ast::Function>,
+    pub functions: Vec<ast::Function>,
     // The length where lower indices are made transitive.
-    pub(crate) transitive_functions_len: usize,
-    pub(crate) ext_prelude: Vec<FnExternal>,
-    pub(crate) register_namespace: Arc<Vec<Arc<String>>>,
+    pub transitive_functions_len: usize,
+    pub ext_prelude: Vec<FnExternal>,
+    pub register_namespace: Arc<Vec<Arc<String>>>,
 }
 
 impl Default for Module {
@@ -784,7 +784,7 @@ impl Module {
         self.register_namespace = Arc::new(vec![]);
     }
 
-    pub(crate) fn register(&mut self, function: ast::Function) {
+    pub fn register(&mut self, function: ast::Function) {
         self.functions.push(function);
     }
 
@@ -817,7 +817,7 @@ impl Module {
     /// Generates an error message.
     ///
     /// Uses the call stack to look up the source of the function.
-    pub(crate) fn error(&self, range: Range, msg: &str, rt: &Runtime) -> String {
+    pub fn error(&self, range: Range, msg: &str, rt: &Runtime) -> String {
         let fnindex = if let Some(x) = rt.call_stack.last() {
             x.index
         } else {
@@ -827,7 +827,7 @@ impl Module {
     }
 
     /// Generates an error with a function index.
-    pub(crate) fn error_fnindex(&self, range: Range, msg: &str, fnindex: usize) -> String {
+    pub fn error_fnindex(&self, range: Range, msg: &str, fnindex: usize) -> String {
         let source = match self.functions.get(fnindex) {
             Some(x) => &x.source,
             None => return format!("{}\nfnindex `{}` outside bounds of `0..{}`",
@@ -837,7 +837,7 @@ impl Module {
     }
 
     /// Generates an error message with a source.
-    pub(crate) fn error_source(&self, range: Range, msg: &str, source: &Arc<String>) -> String {
+    pub fn error_source(&self, range: Range, msg: &str, source: &Arc<String>) -> String {
         use piston_meta::ParseErrorHandler;
 
         let mut w: Vec<u8> = vec![];

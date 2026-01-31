@@ -1,4 +1,12 @@
+# What does this fork do?
+
+- It implements clone for `dyon::runtime::Call`
+- Makes many private functions public
+- Makes many private struct fields public
+- Ran `clippy fix` on the library
+
 # Dyon [![Crates.io](https://img.shields.io/crates/v/dyon.svg)](https://crates.io/crates/dyon) [![Crates.io](https://img.shields.io/crates/l/dyon.svg)](https://github.com/PistonDevelopers/dyon/blob/master/LICENSE-MIT)
+
 A rusty dynamically typed scripting language
 
 ```dyon no_run
@@ -46,7 +54,7 @@ dyonrun <file.dyon>
 
 [Dyon for Atom](https://github.com/PistonDevelopers/atom-language-dyon)  
 [Dyon for Vim](https://github.com/thyrgle/vim-dyon)  
-[Dyon for Visual Studio Code](https://github.com/martinlindhe/vscode-language-dyon)  
+[Dyon for Visual Studio Code](https://github.com/martinlindhe/vscode-language-dyon)
 
 ![coding](./images/code.png)
 
@@ -165,9 +173,10 @@ Non-goals:
 ## License
 
 Licensed under either of
- * Apache License, Version 2.0 ([LICENSE-APACHE](LICENSE-APACHE) or http://www.apache.org/licenses/LICENSE-2.0)
- * MIT license ([LICENSE-MIT](LICENSE-MIT) or http://opensource.org/licenses/MIT)
-at your option.
+
+- Apache License, Version 2.0 ([LICENSE-APACHE](LICENSE-APACHE) or http://www.apache.org/licenses/LICENSE-2.0)
+- MIT license ([LICENSE-MIT](LICENSE-MIT) or http://opensource.org/licenses/MIT)
+  at your option.
 
 ### Contribution
 

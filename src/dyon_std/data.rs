@@ -45,7 +45,7 @@ static NUMBER_SETTINGS: NumberSettings = NumberSettings {
 
 const SEPS: &str = "(){}[],.:;\n\"\\";
 
-fn expr(read: &mut ReadToken, strings: &mut Strings, data: &str) -> Result<Variable, String> {
+pub fn expr(read: &mut ReadToken, strings: &mut Strings, data: &str) -> Result<Variable, String> {
     if let Some(range) = read.tag("{") {
         // Object.
         *read = read.consume(range.length);
@@ -145,7 +145,7 @@ fn expr(read: &mut ReadToken, strings: &mut Strings, data: &str) -> Result<Varia
     Err(error(read.start(), "Reached end of file", data))
 }
 
-fn object(read: &mut ReadToken, strings: &mut Strings, data: &str) -> Result<Variable, String> {
+pub fn object(read: &mut ReadToken, strings: &mut Strings, data: &str) -> Result<Variable, String> {
     use std::collections::HashMap;
 
     let mut res: HashMap<Arc<String>, Variable> = HashMap::new();
@@ -212,7 +212,7 @@ fn object(read: &mut ReadToken, strings: &mut Strings, data: &str) -> Result<Var
     Ok(Variable::Object(Arc::new(res)))
 }
 
-fn array(read: &mut ReadToken, strings: &mut Strings, data: &str) -> Result<Variable, String> {
+pub fn array(read: &mut ReadToken, strings: &mut Strings, data: &str) -> Result<Variable, String> {
     let mut res = vec![];
     let mut was_comma = false;
     loop {
@@ -233,7 +233,7 @@ fn array(read: &mut ReadToken, strings: &mut Strings, data: &str) -> Result<Vari
     Ok(Variable::Array(Arc::new(res)))
 }
 
-fn link(read: &mut ReadToken, strings: &mut Strings, data: &str) -> Result<Variable, String> {
+pub fn link(read: &mut ReadToken, strings: &mut Strings, data: &str) -> Result<Variable, String> {
     use crate::Link;
 
     opt_w(read);
@@ -264,7 +264,7 @@ fn link(read: &mut ReadToken, strings: &mut Strings, data: &str) -> Result<Varia
     Ok(Variable::Link(Box::new(link)))
 }
 
-fn vec4(read: &mut ReadToken, data: &str) -> Result<Variable, String> {
+pub fn vec4(read: &mut ReadToken, data: &str) -> Result<Variable, String> {
     let x = if let Some(range) = read.number(&NUMBER_SETTINGS) {
         match read.parse_number(&NUMBER_SETTINGS, range.length) {
             Ok(x) => {
@@ -324,7 +324,7 @@ fn vec4(read: &mut ReadToken, data: &str) -> Result<Variable, String> {
 }
 
 /// Reads optional whitespace including comments.
-fn opt_w(read: &mut ReadToken) {
+pub fn opt_w(read: &mut ReadToken) {
     loop {
         let start = *read;
         let range = read.whitespace();
@@ -345,7 +345,7 @@ fn opt_w(read: &mut ReadToken) {
     }
 }
 
-fn multi_line_comment(read: &mut ReadToken) {
+pub fn multi_line_comment(read: &mut ReadToken) {
     // Multi-line comment.
     if let Some(range) = read.tag("/*") {
         *read = read.consume(range.length);
@@ -387,7 +387,7 @@ fn multi_line_comment(read: &mut ReadToken) {
 }
 
 /// Reads comma.
-fn comma(read: &mut ReadToken) -> bool {
+pub fn comma(read: &mut ReadToken) -> bool {
     let mut res = false;
     opt_w(read);
     if let Some(range) = read.tag(",") {
@@ -399,7 +399,7 @@ fn comma(read: &mut ReadToken) -> bool {
 }
 
 /// Generates error message using Piston-Meta's error handler.
-fn error(range: Range, msg: &str, data: &str) -> String {
+pub fn error(range: Range, msg: &str, data: &str) -> String {
     use piston_meta::ParseErrorHandler;
 
     let mut handler = ParseErrorHandler::new(data);

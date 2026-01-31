@@ -1,5 +1,5 @@
 #![doc = include_str!("../README.md")]
-#![deny(missing_docs)]
+#![warn(missing_docs)]
 extern crate piston_meta;
 extern crate range;
 extern crate read_color;
@@ -719,7 +719,7 @@ pub fn load_meta(
     check_ignored_meta_data(conv_res, source, &d, data, &ignored)
 }
 
-fn check_ignored_meta_data(
+pub fn check_ignored_meta_data(
     conv_res: Result<(), ()>,
     source: &str,
     d: &Arc<String>,

@@ -3,7 +3,7 @@ use crate::Dfn;
 
 use std::sync::Arc;
 
-fn report(
+pub fn report(
     i: usize,
     found: bool,
     ambiguous: bool,
@@ -46,7 +46,7 @@ fn report(
     Ok(())
 }
 
-pub(crate) fn declaration(
+pub fn declaration(
     i: usize,
     decl: usize,
     nodes: &[Node],
@@ -128,7 +128,7 @@ pub(crate) fn declaration(
     report(i, found, ambiguous, count, nodes, todo)
 }
 
-pub(crate) fn prelude(
+pub fn prelude(
     i: usize,
     f: &Dfn,
     nodes: &[Node],

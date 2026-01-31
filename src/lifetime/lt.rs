@@ -58,7 +58,7 @@ impl PartialOrd for Lifetime {
 /// If they have any argument in common, the longer list outlives the shorter.
 /// If they have no argument in common, it is not known whether one outlives
 /// the other.
-fn compare_argument_outlives(a: &[usize], b: &[usize]) -> Option<Ordering> {
+pub fn compare_argument_outlives(a: &[usize], b: &[usize]) -> Option<Ordering> {
     for &i in a {
         for &j in b {
             if i == j {
@@ -70,7 +70,7 @@ fn compare_argument_outlives(a: &[usize], b: &[usize]) -> Option<Ordering> {
 }
 
 /// Gets the lifetime of a function argument.
-pub(crate) fn arg_lifetime(
+pub fn arg_lifetime(
     declaration: usize,
     arg: &Node,
     nodes: &[Node],
@@ -114,7 +114,7 @@ pub enum LifetimeError {
 
 pub type LifetimeResult = Result<Lifetime, LifetimeError>;
 
-pub(crate) fn compare_lifetimes(
+pub fn compare_lifetimes(
     l: &LifetimeResult,
     r: &LifetimeResult,
     nodes: &[Node],

@@ -14,10 +14,10 @@ mod meta;
 #[cfg(not(all(not(target_family = "wasm"), feature = "http")))]
 const HTTP_SUPPORT_DISABLED: &'static str = "Http support is disabled";
 
-pub(crate) const FILE_SUPPORT_DISABLED: &str =
+pub const FILE_SUPPORT_DISABLED: &str =
     "File support is disabled";
 
-pub(crate) fn and_also(rt: &mut Runtime) -> Result<Variable, String> {
+pub fn and_also(rt: &mut Runtime) -> Result<Variable, String> {
     use Variable::*;
 
     let b = rt.stack.pop().expect(TINVOTS);
@@ -28,7 +28,7 @@ pub(crate) fn and_also(rt: &mut Runtime) -> Result<Variable, String> {
     })
 }
 
-pub(crate) fn or_else(rt: &mut Runtime) -> Result<Variable, String> {
+pub fn or_else(rt: &mut Runtime) -> Result<Variable, String> {
     use Variable::*;
 
     let b = rt.stack.pop().expect(TINVOTS);
@@ -39,7 +39,7 @@ pub(crate) fn or_else(rt: &mut Runtime) -> Result<Variable, String> {
     })
 }
 
-pub(crate) fn less(a: &Variable, b: &Variable) -> Result<Variable, String> {
+pub fn less(a: &Variable, b: &Variable) -> Result<Variable, String> {
     use Variable::*;
 
     Ok(match (a, b) {
@@ -49,7 +49,7 @@ pub(crate) fn less(a: &Variable, b: &Variable) -> Result<Variable, String> {
     })
 }
 
-pub(crate) fn less_or_equal(
+pub fn less_or_equal(
     a: &Variable,
     b: &Variable,
 ) -> Result<Variable, String> {
@@ -62,7 +62,7 @@ pub(crate) fn less_or_equal(
     })
 }
 
-pub(crate) fn greater(a: &Variable, b: &Variable) -> Result<Variable, String> {
+pub fn greater(a: &Variable, b: &Variable) -> Result<Variable, String> {
     less_or_equal(a, b).map(|v| {
         if let Variable::Bool(a, sec) = v {
             Variable::Bool(!a, sec)
@@ -72,7 +72,7 @@ pub(crate) fn greater(a: &Variable, b: &Variable) -> Result<Variable, String> {
     })
 }
 
-pub(crate) fn greater_or_equal(
+pub fn greater_or_equal(
     a: &Variable,
     b: &Variable,
 ) -> Result<Variable, String> {
@@ -85,7 +85,7 @@ pub(crate) fn greater_or_equal(
     })
 }
 
-pub(crate) fn equal(a: &Variable, b: &Variable) -> Result<Variable, String> {
+pub fn equal(a: &Variable, b: &Variable) -> Result<Variable, String> {
     use Variable::*;
 
     Ok(match (a, b) {
@@ -122,7 +122,7 @@ pub(crate) fn equal(a: &Variable, b: &Variable) -> Result<Variable, String> {
     })
 }
 
-pub(crate) fn not_equal(
+pub fn not_equal(
     a: &Variable,
     b: &Variable,
 ) -> Result<Variable, String> {
@@ -135,7 +135,7 @@ pub(crate) fn not_equal(
     })
 }
 
-pub(crate) fn add(a: &Variable, b: &Variable) -> Result<Variable, String> {
+pub fn add(a: &Variable, b: &Variable) -> Result<Variable, String> {
     use Variable::*;
 
     Ok(match (a, b) {
@@ -174,7 +174,7 @@ pub(crate) fn add(a: &Variable, b: &Variable) -> Result<Variable, String> {
     })
 }
 
-pub(crate) fn sub(a: &Variable, b: &Variable) -> Result<Variable, String> {
+pub fn sub(a: &Variable, b: &Variable) -> Result<Variable, String> {
     use Variable::*;
 
     Ok(match (a, b) {
@@ -214,7 +214,7 @@ pub(crate) fn sub(a: &Variable, b: &Variable) -> Result<Variable, String> {
     })
 }
 
-pub(crate) fn mul(a: &Variable, b: &Variable) -> Result<Variable, String> {
+pub fn mul(a: &Variable, b: &Variable) -> Result<Variable, String> {
     use Variable::*;
 
     Ok(match (a, b) {
@@ -242,7 +242,7 @@ pub(crate) fn mul(a: &Variable, b: &Variable) -> Result<Variable, String> {
     })
 }
 
-pub(crate) fn div(a: &Variable, b: &Variable) -> Result<Variable, String> {
+pub fn div(a: &Variable, b: &Variable) -> Result<Variable, String> {
     use Variable::*;
 
     Ok(match (a, b) {
@@ -262,7 +262,7 @@ pub(crate) fn div(a: &Variable, b: &Variable) -> Result<Variable, String> {
     })
 }
 
-pub(crate) fn rem(a: &Variable, b: &Variable) -> Result<Variable, String> {
+pub fn rem(a: &Variable, b: &Variable) -> Result<Variable, String> {
     use Variable::*;
 
     Ok(match (a, b) {
@@ -282,7 +282,7 @@ pub(crate) fn rem(a: &Variable, b: &Variable) -> Result<Variable, String> {
     })
 }
 
-pub(crate) fn pow(a: &Variable, b: &Variable) -> Result<Variable, String> {
+pub fn pow(a: &Variable, b: &Variable) -> Result<Variable, String> {
     use Variable::*;
 
     Ok(match (a, b) {
@@ -306,14 +306,14 @@ pub(crate) fn pow(a: &Variable, b: &Variable) -> Result<Variable, String> {
     })
 }
 
-pub(crate) fn not(a: &Variable) -> Result<Variable, String> {
+pub fn not(a: &Variable) -> Result<Variable, String> {
     Ok(match *a {
         Variable::Bool(ref b, ref sec) => Variable::Bool(!b, sec.clone()),
         _ => return Err("Expected `bool`".into()),
     })
 }
 
-pub(crate) fn neg(a: &Variable) -> Result<Variable, String> {
+pub fn neg(a: &Variable) -> Result<Variable, String> {
     Ok(match *a {
         Variable::F64(v, ref sec) => Variable::F64(-v, sec.clone()),
         Variable::Vec4(v) => Variable::Vec4([-v[0], -v[1], -v[2], -v[3]]),
@@ -327,7 +327,7 @@ pub(crate) fn neg(a: &Variable) -> Result<Variable, String> {
     })
 }
 
-pub(crate) fn dot(a: &Variable, b: &Variable) -> Result<Variable, String> {
+pub fn dot(a: &Variable, b: &Variable) -> Result<Variable, String> {
     Ok(Variable::f64(match (a, b) {
         (&Variable::Vec4(a), &Variable::Vec4(b)) => {
             vecmath::vec4_dot(a, b) as f64
@@ -356,7 +356,7 @@ dyon_fn! {fn y(v: Vec4) -> f64 {f64::from(v.0[1])}}
 dyon_fn! {fn z(v: Vec4) -> f64 {f64::from(v.0[2])}}
 dyon_fn! {fn w(v: Vec4) -> f64 {f64::from(v.0[3])}}
 
-pub(crate) fn norm(v: &Variable) -> Result<Variable, String> {
+pub fn norm(v: &Variable) -> Result<Variable, String> {
     if let Variable::Vec4(v) = *v {
         Ok(Variable::f64(vecmath::vec4_len(v) as f64))
     } else {
@@ -364,7 +364,7 @@ pub(crate) fn norm(v: &Variable) -> Result<Variable, String> {
     }
 }
 
-pub(crate) fn s(rt: &mut Runtime) -> Result<Variable, String> {
+pub fn s(rt: &mut Runtime) -> Result<Variable, String> {
     let ind: f64 = rt.pop().expect(TINVOTS);
     let ind = ind as usize;
     if ind >= 4 {
@@ -443,7 +443,7 @@ dyon_fn! {fn ry(m: Mat4) -> Vec4 {Vec4([m.0[0][1], m.0[1][1], m.0[2][1], m.0[3][
 dyon_fn! {fn rz(m: Mat4) -> Vec4 {Vec4([m.0[0][2], m.0[1][2], m.0[2][2], m.0[3][2]])}}
 dyon_fn! {fn rw(m: Mat4) -> Vec4 {Vec4([m.0[0][3], m.0[1][3], m.0[2][3], m.0[3][3]])}}
 
-pub(crate) fn rv(rt: &mut Runtime) -> Result<Variable, String> {
+pub fn rv(rt: &mut Runtime) -> Result<Variable, String> {
     let ind: f64 = rt.pop().expect(TINVOTS);
     let ind = ind as usize;
     if ind >= 4 {
@@ -458,7 +458,7 @@ dyon_fn! {fn cy(m: Mat4) -> Vec4 {Vec4(m.0[1])}}
 dyon_fn! {fn cz(m: Mat4) -> Vec4 {Vec4(m.0[2])}}
 dyon_fn! {fn cw(m: Mat4) -> Vec4 {Vec4(m.0[3])}}
 
-pub(crate) fn cv(rt: &mut Runtime) -> Result<Variable, String> {
+pub fn cv(rt: &mut Runtime) -> Result<Variable, String> {
     let ind: f64 = rt.pop().expect(TINVOTS);
     let ind = ind as usize;
     if ind >= 4 {
@@ -468,12 +468,12 @@ pub(crate) fn cv(rt: &mut Runtime) -> Result<Variable, String> {
     Ok(Variable::Mat4(Box::new(m)))
 }
 
-pub(crate) fn clone(rt: &mut Runtime) -> Result<Variable, String> {
+pub fn clone(rt: &mut Runtime) -> Result<Variable, String> {
     let v = rt.stack.pop().expect(TINVOTS);
     Ok(rt.get(&v).deep_clone(&rt.stack))
 }
 
-pub(crate) fn why(rt: &mut Runtime) -> Result<Variable, String> {
+pub fn why(rt: &mut Runtime) -> Result<Variable, String> {
     let v = rt.stack.pop().expect(TINVOTS);
     Ok(Variable::Array(Arc::new(match rt.get(&v) {
         &Variable::Bool(true, Some(ref sec)) => {
@@ -497,7 +497,7 @@ pub(crate) fn why(rt: &mut Runtime) -> Result<Variable, String> {
     })))
 }
 
-pub(crate) fn _where(rt: &mut Runtime) -> Result<Variable, String> {
+pub fn _where(rt: &mut Runtime) -> Result<Variable, String> {
     let v = rt.stack.pop().expect(TINVOTS);
     Ok(Variable::Array(Arc::new(match rt.get(&v) {
         &Variable::F64(val, Some(ref sec)) => {
@@ -522,7 +522,7 @@ pub(crate) fn _where(rt: &mut Runtime) -> Result<Variable, String> {
     })))
 }
 
-pub(crate) fn explain_why(rt: &mut Runtime) -> Result<Variable, String> {
+pub fn explain_why(rt: &mut Runtime) -> Result<Variable, String> {
     let why = rt.stack.pop().expect(TINVOTS);
     let val = rt.stack.pop().expect(TINVOTS);
     let (val, why) = match rt.get(&val) {
@@ -542,7 +542,7 @@ pub(crate) fn explain_why(rt: &mut Runtime) -> Result<Variable, String> {
     Ok(Variable::Bool(val, Some(why)))
 }
 
-pub(crate) fn explain_where(rt: &mut Runtime) -> Result<Variable, String> {
+pub fn explain_where(rt: &mut Runtime) -> Result<Variable, String> {
     let wh = rt.stack.pop().expect(TINVOTS);
     let val = rt.stack.pop().expect(TINVOTS);
     let (val, wh) = match rt.get(&val) {
@@ -563,7 +563,7 @@ pub(crate) fn explain_where(rt: &mut Runtime) -> Result<Variable, String> {
 }
 
 #[cfg(feature = "stdio")]
-pub(crate) fn println(rt: &mut Runtime) -> Result<(), String> {
+pub fn println(rt: &mut Runtime) -> Result<(), String> {
     use write::{EscapeString, print_variable};
 
     let x = rt.stack.pop().expect(TINVOTS);
@@ -573,7 +573,7 @@ pub(crate) fn println(rt: &mut Runtime) -> Result<(), String> {
 }
 
 #[cfg(feature = "stdio")]
-pub(crate) fn print(rt: &mut Runtime) -> Result<(), String> {
+pub fn print(rt: &mut Runtime) -> Result<(), String> {
     use write::{EscapeString, print_variable};
 
     let x = rt.stack.pop().expect(TINVOTS);
@@ -582,7 +582,7 @@ pub(crate) fn print(rt: &mut Runtime) -> Result<(), String> {
 }
 
 #[cfg(feature = "stdio")]
-pub(crate) fn eprintln(rt: &mut Runtime) -> Result<(), String> {
+pub fn eprintln(rt: &mut Runtime) -> Result<(), String> {
     use write::{EscapeString, eprint_variable};
 
     let x = rt.stack.pop().expect(TINVOTS);
@@ -592,7 +592,7 @@ pub(crate) fn eprintln(rt: &mut Runtime) -> Result<(), String> {
 }
 
 #[cfg(feature = "stdio")]
-pub(crate) fn eprint(rt: &mut Runtime) -> Result<(), String> {
+pub fn eprint(rt: &mut Runtime) -> Result<(), String> {
     use write::{EscapeString, eprint_variable};
 
     let x = rt.stack.pop().expect(TINVOTS);
@@ -626,7 +626,7 @@ dyon_fn! {fn sleep(v: f64) {
     sleep(Duration::new(secs, nanos));
 }}
 
-pub(crate) fn head(rt: &mut Runtime) -> Result<Variable, String> {
+pub fn head(rt: &mut Runtime) -> Result<Variable, String> {
     let v = rt.stack.pop().expect(TINVOTS);
     Ok(Variable::Option(match rt.get(&v) {
         Variable::Link(link) => link.head(),
@@ -634,7 +634,7 @@ pub(crate) fn head(rt: &mut Runtime) -> Result<Variable, String> {
     }))
 }
 
-pub(crate) fn tip(rt: &mut Runtime) -> Result<Variable, String> {
+pub fn tip(rt: &mut Runtime) -> Result<Variable, String> {
     let v = rt.stack.pop().expect(TINVOTS);
     Ok(Variable::Option(match rt.get(&v) {
         Variable::Link(link) => link.tip(),
@@ -642,7 +642,7 @@ pub(crate) fn tip(rt: &mut Runtime) -> Result<Variable, String> {
     }))
 }
 
-pub(crate) fn tail(rt: &mut Runtime) -> Result<Variable, String> {
+pub fn tail(rt: &mut Runtime) -> Result<Variable, String> {
     let v = rt.stack.pop().expect(TINVOTS);
     Ok(Variable::Link(Box::new(match rt.get(&v) {
         Variable::Link(link) => link.tail(),
@@ -650,7 +650,7 @@ pub(crate) fn tail(rt: &mut Runtime) -> Result<Variable, String> {
     })))
 }
 
-pub(crate) fn neck(rt: &mut Runtime) -> Result<Variable, String> {
+pub fn neck(rt: &mut Runtime) -> Result<Variable, String> {
     let v = rt.stack.pop().expect(TINVOTS);
     Ok(Variable::Link(Box::new(match rt.get(&v) {
         Variable::Link(link) => link.neck(),
@@ -658,7 +658,7 @@ pub(crate) fn neck(rt: &mut Runtime) -> Result<Variable, String> {
     })))
 }
 
-pub(crate) fn is_empty(rt: &mut Runtime) -> Result<Variable, String> {
+pub fn is_empty(rt: &mut Runtime) -> Result<Variable, String> {
     let v = rt.stack.pop().expect(TINVOTS);
     Ok(Variable::bool(match rt.get(&v) {
         Variable::Link(link) => link.is_empty(),
@@ -668,7 +668,7 @@ pub(crate) fn is_empty(rt: &mut Runtime) -> Result<Variable, String> {
 
 #[cfg(feature = "rand")]
 #[cfg(not(target_family = "wasm"))]
-pub(crate) fn random(rt: &mut Runtime) -> Result<Variable, String> {
+pub fn random(rt: &mut Runtime) -> Result<Variable, String> {
     use rand::Rng;
 
     Ok(Variable::f64(rt.rng.random()))
@@ -676,14 +676,14 @@ pub(crate) fn random(rt: &mut Runtime) -> Result<Variable, String> {
 
 dyon_fn! {fn tau() -> f64 {f64::consts::TAU}}
 
-pub(crate) fn len(a: &Variable) -> Result<Variable, String> {
+pub fn len(a: &Variable) -> Result<Variable, String> {
     match a {
         Variable::Array(arr) => Ok(Variable::f64(arr.len() as f64)),
         _ => Err("Expected array".into()),
     }
 }
 
-pub(crate) fn push_ref(rt: &mut Runtime) -> Result<(), String> {
+pub fn push_ref(rt: &mut Runtime) -> Result<(), String> {
     let item = rt.stack.pop().expect(TINVOTS);
     let v = rt.stack.pop().expect(TINVOTS);
 
@@ -709,7 +709,7 @@ pub(crate) fn push_ref(rt: &mut Runtime) -> Result<(), String> {
     Ok(())
 }
 
-pub(crate) fn insert_ref(rt: &mut Runtime) -> Result<(), String> {
+pub fn insert_ref(rt: &mut Runtime) -> Result<(), String> {
     let item = rt.stack.pop().expect(TINVOTS);
     let index = rt.stack.pop().expect(TINVOTS);
     let index = match rt.get(&index) {
@@ -746,7 +746,7 @@ pub(crate) fn insert_ref(rt: &mut Runtime) -> Result<(), String> {
     Ok(())
 }
 
-pub(crate) fn push(rt: &mut Runtime) -> Result<(), String> {
+pub fn push(rt: &mut Runtime) -> Result<(), String> {
     let item = rt.stack.pop().expect(TINVOTS);
     let item = rt.get(&item).deep_clone(&rt.stack);
     let v = rt.stack.pop().expect(TINVOTS);
@@ -773,7 +773,7 @@ pub(crate) fn push(rt: &mut Runtime) -> Result<(), String> {
     Ok(())
 }
 
-pub(crate) fn insert(rt: &mut Runtime) -> Result<(), String> {
+pub fn insert(rt: &mut Runtime) -> Result<(), String> {
     let item = rt.stack.pop().expect(TINVOTS);
     let item = rt.get(&item).deep_clone(&rt.stack);
     let index = rt.stack.pop().expect(TINVOTS);
@@ -811,7 +811,7 @@ pub(crate) fn insert(rt: &mut Runtime) -> Result<(), String> {
     Ok(())
 }
 
-pub(crate) fn pop(rt: &mut Runtime) -> Result<Variable, String> {
+pub fn pop(rt: &mut Runtime) -> Result<Variable, String> {
     let arr = rt.stack.pop().expect(TINVOTS);
     let mut v: Option<Variable> = None;
     if let Variable::Ref(ind) = arr {
@@ -845,7 +845,7 @@ pub(crate) fn pop(rt: &mut Runtime) -> Result<Variable, String> {
     Ok(v)
 }
 
-pub(crate) fn remove(rt: &mut Runtime) -> Result<Variable, String> {
+pub fn remove(rt: &mut Runtime) -> Result<Variable, String> {
     let index = rt.stack.pop().expect(TINVOTS);
     let index = match rt.get(&index) {
         &Variable::F64(index, _) => index,
@@ -875,7 +875,7 @@ pub(crate) fn remove(rt: &mut Runtime) -> Result<Variable, String> {
     }
 }
 
-pub(crate) fn reverse(rt: &mut Runtime) -> Result<(), String> {
+pub fn reverse(rt: &mut Runtime) -> Result<(), String> {
     let v = rt.stack.pop().expect(TINVOTS);
     if let Variable::Ref(ind) = v {
         let ok = if let Variable::Array(ref mut arr) = rt.stack[ind] {
@@ -899,7 +899,7 @@ pub(crate) fn reverse(rt: &mut Runtime) -> Result<(), String> {
     Ok(())
 }
 
-pub(crate) fn clear(rt: &mut Runtime) -> Result<(), String> {
+pub fn clear(rt: &mut Runtime) -> Result<(), String> {
     let v = rt.stack.pop().expect(TINVOTS);
     if let Variable::Ref(ind) = v {
         let ok = if let Variable::Array(ref mut arr) = rt.stack[ind] {
@@ -923,7 +923,7 @@ pub(crate) fn clear(rt: &mut Runtime) -> Result<(), String> {
     Ok(())
 }
 
-pub(crate) fn swap(rt: &mut Runtime) -> Result<(), String> {
+pub fn swap(rt: &mut Runtime) -> Result<(), String> {
     let j = rt.stack.pop().expect(TINVOTS);
     let i = rt.stack.pop().expect(TINVOTS);
     let j = match rt.get(&j) {
@@ -958,7 +958,7 @@ pub(crate) fn swap(rt: &mut Runtime) -> Result<(), String> {
 }
 
 #[cfg(feature = "stdio")]
-pub(crate) fn read_line(_rt: &mut Runtime) -> Result<Variable, String> {
+pub fn read_line(_rt: &mut Runtime) -> Result<Variable, String> {
     use std::io::{self, Write};
 
     let mut input = String::new();
@@ -972,7 +972,7 @@ pub(crate) fn read_line(_rt: &mut Runtime) -> Result<Variable, String> {
 }
 
 #[cfg(feature = "stdio")]
-pub(crate) fn read_number(rt: &mut Runtime) -> Result<Variable, String> {
+pub fn read_number(rt: &mut Runtime) -> Result<Variable, String> {
     use std::io::{self, Write};
 
     let err: Arc<String> = rt.pop().expect(TINVOTS);
@@ -999,7 +999,7 @@ dyon_fn! {fn trim(v: Arc<String>) -> Arc<String> {Arc::new(v.trim().into())}}
 dyon_fn! {fn trim_left(v: Arc<String>) -> Arc<String> {Arc::new(v.trim_start().into())}}
 dyon_fn! {fn trim_right(v: Arc<String>) -> Arc<String> {Arc::new(v.trim_end().into())}}
 
-pub(crate) fn _str(rt: &mut Runtime) -> Result<Variable, String> {
+pub fn _str(rt: &mut Runtime) -> Result<Variable, String> {
     use write::{EscapeString, write_variable};
 
     let v = rt.stack.pop().expect(TINVOTS);
@@ -1012,7 +1012,7 @@ dyon_fn! {fn fmt__tab_string(tab: f64, text: Arc<String>) -> String {
     write::fmt(tab as i32, &text)
 }}
 
-pub(crate) fn json_string(rt: &mut Runtime) -> Result<Variable, String> {
+pub fn json_string(rt: &mut Runtime) -> Result<Variable, String> {
     use write::{EscapeString, write_variable};
 
     let v = rt.stack.pop().expect(TINVOTS);
@@ -1071,7 +1071,7 @@ dyon_fn! {fn linear_to_srgb__color(v: Vec4) -> Vec4 {
     Vec4([to_srgb(v[0]), to_srgb(v[1]), to_srgb(v[2]), v[3]])
 }}
 
-pub(crate) fn _typeof(rt: &mut Runtime) -> Result<Variable, String> {
+pub fn _typeof(rt: &mut Runtime) -> Result<Variable, String> {
     use crate::{Variable::*, runtime::*};
 
     let v = rt.stack.pop().expect(TINVOTS);
@@ -1098,20 +1098,20 @@ pub(crate) fn _typeof(rt: &mut Runtime) -> Result<Variable, String> {
     }))
 }
 
-pub(crate) fn debug(rt: &mut Runtime) -> Result<(), String> {
+pub fn debug(rt: &mut Runtime) -> Result<(), String> {
     println!("Stack {:#?}", rt.stack);
     println!("Locals {:#?}", rt.local_stack);
     println!("Currents {:#?}", rt.current_stack);
     Ok(())
 }
 
-pub(crate) fn backtrace(rt: &mut Runtime) -> Result<(), String> {
+pub fn backtrace(rt: &mut Runtime) -> Result<(), String> {
     println!("{:#?}", rt.call_stack);
     Ok(())
 }
 
 #[cfg(feature = "dynload")]
-pub(crate) fn load(rt: &mut Runtime) -> Result<Variable, String> {
+pub fn load(rt: &mut Runtime) -> Result<Variable, String> {
     let v = rt.stack.pop().expect(TINVOTS);
     Ok(match rt.get(&v) {
         Variable::Str(text) => {
@@ -1148,7 +1148,7 @@ pub(crate) fn load(rt: &mut Runtime) -> Result<Variable, String> {
 }
 
 #[cfg(feature = "dynload")]
-pub(crate) fn load__source_imports(
+pub fn load__source_imports(
     rt: &mut Runtime,
 ) -> Result<Variable, String> {
     use crate::load;
@@ -1199,7 +1199,7 @@ pub(crate) fn load__source_imports(
 }
 
 #[cfg(feature = "dynload")]
-pub(crate) fn load__source_imports_tr_usetr(
+pub fn load__source_imports_tr_usetr(
     rt: &mut Runtime,
 ) -> Result<Variable, String> {
     use crate::load;
@@ -1257,7 +1257,7 @@ pub(crate) fn load__source_imports_tr_usetr(
     })
 }
 
-pub(crate) fn module__in_string_imports(
+pub fn module__in_string_imports(
     rt: &mut Runtime,
 ) -> Result<Variable, String> {
     let modules = rt.stack.pop().expect(TINVOTS);
@@ -1309,7 +1309,7 @@ pub(crate) fn module__in_string_imports(
     })
 }
 
-pub(crate) fn module__in_string_imports_tr_usetr(
+pub fn module__in_string_imports_tr_usetr(
     rt: &mut Runtime,
 ) -> Result<Variable, String> {
     let usetr: bool = rt.pop().expect(TINVOTS);
@@ -1368,7 +1368,7 @@ pub(crate) fn module__in_string_imports_tr_usetr(
     })
 }
 
-pub(crate) fn check__in_string_imports(
+pub fn check__in_string_imports(
     rt: &mut Runtime,
 ) -> Result<Variable, String> {
     let modules = rt.stack.pop().expect(TINVOTS);
@@ -1419,7 +1419,7 @@ pub(crate) fn check__in_string_imports(
     })
 }
 
-pub(crate) fn check__in_string_imports_usetr(
+pub fn check__in_string_imports_usetr(
     rt: &mut Runtime,
 ) -> Result<Variable, String> {
     let usetr: bool = rt.pop().expect(TINVOTS);
@@ -1473,7 +1473,7 @@ pub(crate) fn check__in_string_imports_usetr(
     })
 }
 
-pub(crate) fn _call(rt: &mut Runtime) -> Result<(), String> {
+pub fn _call(rt: &mut Runtime) -> Result<(), String> {
     // Use the source from calling function.
     let source =
         rt.module.functions[rt.call_stack.last().unwrap().index].source.clone();
@@ -1554,7 +1554,7 @@ pub(crate) fn _call(rt: &mut Runtime) -> Result<(), String> {
     Ok(())
 }
 
-pub(crate) fn call_ret(rt: &mut Runtime) -> Result<Variable, String> {
+pub fn call_ret(rt: &mut Runtime) -> Result<Variable, String> {
     // Use the source from calling function.
     let source =
         rt.module.functions[rt.call_stack.last().unwrap().index].source.clone();
@@ -1643,12 +1643,12 @@ pub(crate) fn call_ret(rt: &mut Runtime) -> Result<Variable, String> {
     Ok(v)
 }
 
-pub(crate) fn functions(rt: &mut Runtime) -> Result<Variable, String> {
+pub fn functions(rt: &mut Runtime) -> Result<Variable, String> {
     // List available functions in scope.
     Ok(Variable::Array(Arc::new(functions::list_functions(&rt.module))))
 }
 
-pub(crate) fn functions__module(rt: &mut Runtime) -> Result<Variable, String> {
+pub fn functions__module(rt: &mut Runtime) -> Result<Variable, String> {
     // List available functions in scope.
     let m = rt.stack.pop().expect(TINVOTS);
     let x = rt.get(&m);
@@ -1667,18 +1667,18 @@ pub(crate) fn functions__module(rt: &mut Runtime) -> Result<Variable, String> {
 
 dyon_fn! {fn none() -> Variable {Variable::Option(None)}}
 
-pub(crate) fn some(rt: &mut Runtime) -> Result<Variable, String> {
+pub fn some(rt: &mut Runtime) -> Result<Variable, String> {
     let v = rt.stack.pop().expect(TINVOTS);
     Ok(Variable::Option(Some(Box::new(rt.get(&v).deep_clone(&rt.stack)))))
 }
 
-pub(crate) fn ok(rt: &mut Runtime) -> Result<Variable, String> {
+pub fn ok(rt: &mut Runtime) -> Result<Variable, String> {
     let v = rt.stack.pop().expect(TINVOTS);
     let v = Variable::Result(Ok(Box::new(rt.get(&v).deep_clone(&rt.stack))));
     Ok(v)
 }
 
-pub(crate) fn err(rt: &mut Runtime) -> Result<Variable, String> {
+pub fn err(rt: &mut Runtime) -> Result<Variable, String> {
     let v = rt.stack.pop().expect(TINVOTS);
     Ok(Variable::Result(Err(Box::new(Error {
         message: rt.get(&v).deep_clone(&rt.stack),
@@ -1686,7 +1686,7 @@ pub(crate) fn err(rt: &mut Runtime) -> Result<Variable, String> {
     }))))
 }
 
-pub(crate) fn is_err(rt: &mut Runtime) -> Result<Variable, String> {
+pub fn is_err(rt: &mut Runtime) -> Result<Variable, String> {
     let v = rt.stack.pop().expect(TINVOTS);
     Ok(match rt.get(&v) {
         &Variable::Result(Err(_)) => Variable::bool(true),
@@ -1695,7 +1695,7 @@ pub(crate) fn is_err(rt: &mut Runtime) -> Result<Variable, String> {
     })
 }
 
-pub(crate) fn is_ok(rt: &mut Runtime) -> Result<Variable, String> {
+pub fn is_ok(rt: &mut Runtime) -> Result<Variable, String> {
     let v = rt.stack.pop().expect(TINVOTS);
     Ok(match rt.get(&v) {
         Variable::Result(Err(_)) => Variable::bool(false),
@@ -1704,7 +1704,7 @@ pub(crate) fn is_ok(rt: &mut Runtime) -> Result<Variable, String> {
     })
 }
 
-pub(crate) fn min(rt: &mut Runtime) -> Result<Variable, String> {
+pub fn min(rt: &mut Runtime) -> Result<Variable, String> {
     let v = rt.stack.pop().expect(TINVOTS);
     Ok(Variable::f64(match rt.get(&v) {
         Variable::Array(arr) => {
@@ -1721,7 +1721,7 @@ pub(crate) fn min(rt: &mut Runtime) -> Result<Variable, String> {
     }))
 }
 
-pub(crate) fn max(rt: &mut Runtime) -> Result<Variable, String> {
+pub fn max(rt: &mut Runtime) -> Result<Variable, String> {
     let v = rt.stack.pop().expect(TINVOTS);
     Ok(Variable::f64(match rt.get(&v) {
         Variable::Array(arr) => {
@@ -1738,7 +1738,7 @@ pub(crate) fn max(rt: &mut Runtime) -> Result<Variable, String> {
     }))
 }
 
-pub(crate) fn unwrap(rt: &mut Runtime) -> Result<Variable, String> {
+pub fn unwrap(rt: &mut Runtime) -> Result<Variable, String> {
     use write::{EscapeString, write_variable};
 
     // Return value does not depend on lifetime of argument since
@@ -1775,7 +1775,7 @@ pub(crate) fn unwrap(rt: &mut Runtime) -> Result<Variable, String> {
     })
 }
 
-pub(crate) fn unwrap_or(rt: &mut Runtime) -> Result<Variable, String> {
+pub fn unwrap_or(rt: &mut Runtime) -> Result<Variable, String> {
     // Return value does not depend on lifetime of argument since
     // `ok(x)` and `some(x)` perform a deep clone.
     let def = rt.stack.pop().expect(TINVOTS);
@@ -1790,7 +1790,7 @@ pub(crate) fn unwrap_or(rt: &mut Runtime) -> Result<Variable, String> {
     })
 }
 
-pub(crate) fn unwrap_err(rt: &mut Runtime) -> Result<Variable, String> {
+pub fn unwrap_err(rt: &mut Runtime) -> Result<Variable, String> {
     let v = rt.stack.pop().expect(TINVOTS);
     Ok(match rt.get(&v) {
         &Variable::Result(Err(ref err)) => err.message.clone(),
@@ -1836,7 +1836,7 @@ dyon_fn! {fn syntax__in_string(name: Arc<String>, text: Arc<String>) -> Variable
     })
 }}
 
-pub(crate) fn meta__syntax_in_string(
+pub fn meta__syntax_in_string(
     rt: &mut Runtime,
 ) -> Result<Variable, String> {
     let text = rt.stack.pop().expect(TINVOTS);
@@ -1906,7 +1906,7 @@ dyon_fn! {fn save__string_file(text: Arc<String>, file: Arc<String>) -> Variable
 }}
 
 #[cfg(not(feature = "file"))]
-pub(crate) fn save__string_file(_: &mut Runtime) -> Result<Variable, String> {
+pub fn save__string_file(_: &mut Runtime) -> Result<Variable, String> {
     Err(FILE_SUPPORT_DISABLED.into())
 }
 
@@ -1938,7 +1938,7 @@ dyon_fn! {fn load_string__file(file: Arc<String>) -> Variable {
 }}
 
 #[cfg(not(feature = "file"))]
-pub(crate) fn load_string__file(_: &mut Runtime) -> Result<Variable, String> {
+pub fn load_string__file(_: &mut Runtime) -> Result<Variable, String> {
     Err(FILE_SUPPORT_DISABLED.into())
 }
 
@@ -1957,7 +1957,7 @@ dyon_fn! {fn load_string__url(url: Arc<String>) -> Variable {
 }}
 
 #[cfg(all(not(target_family = "wasm"), feature = "threading"))]
-pub(crate) fn join__thread(rt: &mut Runtime) -> Result<Variable, String> {
+pub fn join__thread(rt: &mut Runtime) -> Result<Variable, String> {
     let thread = rt.stack.pop().expect(TINVOTS);
     let handle_res = Thread::invalidate_handle(rt, thread);
     Ok(Variable::Result({
@@ -2015,7 +2015,7 @@ dyon_fn! {fn load_data__string(text: Arc<String>) -> Variable {
     Variable::Result(res)
 }}
 
-pub(crate) fn args_os(_rt: &mut Runtime) -> Result<Variable, String> {
+pub fn args_os(_rt: &mut Runtime) -> Result<Variable, String> {
     let mut arr: Vec<Variable> = vec![];
     for arg in ::std::env::args_os() {
         if let Ok(t) = arg.into_string() {
@@ -2028,7 +2028,7 @@ pub(crate) fn args_os(_rt: &mut Runtime) -> Result<Variable, String> {
 }
 
 #[cfg(feature = "file")]
-pub(crate) fn save__data_file(rt: &mut Runtime) -> Result<Variable, String> {
+pub fn save__data_file(rt: &mut Runtime) -> Result<Variable, String> {
     use std::{fs::File, io::BufWriter};
 
     use write::{EscapeString, write_variable};
@@ -2068,11 +2068,11 @@ pub(crate) fn save__data_file(rt: &mut Runtime) -> Result<Variable, String> {
 }
 
 #[cfg(not(feature = "file"))]
-pub(crate) fn save__data_file(_: &mut Runtime) -> Result<Variable, String> {
+pub fn save__data_file(_: &mut Runtime) -> Result<Variable, String> {
     Err(FILE_SUPPORT_DISABLED.into())
 }
 
-pub(crate) fn json_from_meta_data(
+pub fn json_from_meta_data(
     rt: &mut Runtime,
 ) -> Result<Variable, String> {
     let meta_data = rt.stack.pop().expect(TINVOTS);
@@ -2091,7 +2091,7 @@ pub(crate) fn json_from_meta_data(
     Ok(Variable::Str(Arc::new(json)))
 }
 
-pub(crate) fn errstr__string_start_len_msg(
+pub fn errstr__string_start_len_msg(
     rt: &mut Runtime,
 ) -> Result<Variable, String> {
     use piston_meta::ParseErrorHandler;
@@ -2124,7 +2124,7 @@ pub(crate) fn errstr__string_start_len_msg(
     Ok(Variable::Str(Arc::new(String::from_utf8(buf).unwrap())))
 }
 
-pub(crate) fn has(rt: &mut Runtime) -> Result<Variable, String> {
+pub fn has(rt: &mut Runtime) -> Result<Variable, String> {
     let key = rt.stack.pop().expect(TINVOTS);
     let key = match rt.get(&key) {
         Variable::Str(t) => t.clone(),
@@ -2137,7 +2137,7 @@ pub(crate) fn has(rt: &mut Runtime) -> Result<Variable, String> {
     }))
 }
 
-pub(crate) fn keys(rt: &mut Runtime) -> Result<Variable, String> {
+pub fn keys(rt: &mut Runtime) -> Result<Variable, String> {
     let obj = rt.stack.pop().expect(TINVOTS);
     Ok(Variable::Array(Arc::new(match rt.get(&obj) {
         Variable::Object(obj) => {
@@ -2147,7 +2147,7 @@ pub(crate) fn keys(rt: &mut Runtime) -> Result<Variable, String> {
     })))
 }
 
-pub(crate) fn chars(rt: &mut Runtime) -> Result<Variable, String> {
+pub fn chars(rt: &mut Runtime) -> Result<Variable, String> {
     let t = rt.stack.pop().expect(TINVOTS);
     let t = match rt.get(&t) {
         Variable::Str(t) => t.clone(),
@@ -2181,7 +2181,7 @@ dyon_fn! {fn now() -> f64 {
 dyon_fn! {fn is_nan(v: f64) -> bool {v.is_nan()}}
 
 #[cfg(all(not(target_family = "wasm"), feature = "threading"))]
-pub(crate) fn wait_next(rt: &mut Runtime) -> Result<Variable, String> {
+pub fn wait_next(rt: &mut Runtime) -> Result<Variable, String> {
     let v = rt.stack.pop().expect(TINVOTS);
     Ok(match rt.get(&v) {
         Variable::In(mutex) => match mutex.lock() {
@@ -2201,7 +2201,7 @@ pub(crate) fn wait_next(rt: &mut Runtime) -> Result<Variable, String> {
 }
 
 #[cfg(all(not(target_family = "wasm"), feature = "threading"))]
-pub(crate) fn next(rt: &mut Runtime) -> Result<Variable, String> {
+pub fn next(rt: &mut Runtime) -> Result<Variable, String> {
     let v = rt.stack.pop().expect(TINVOTS);
     Ok(match rt.get(&v) {
         Variable::In(mutex) => match mutex.lock() {

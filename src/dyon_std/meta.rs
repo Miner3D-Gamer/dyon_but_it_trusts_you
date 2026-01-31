@@ -58,7 +58,7 @@ pub fn parse_syntax_data(rules: &Syntax, file: &str, d: &str) -> Result<Vec<Vari
 }
 
 #[cfg(feature = "file")]
-fn load_metarules_data(meta: &str, s: &str, file: &str, d: &str) -> Result<Vec<Variable>, String> {
+pub fn load_metarules_data(meta: &str, s: &str, file: &str, d: &str) -> Result<Vec<Variable>, String> {
     let rules = syntax_errstr(s)
         .map_err(|err| format!("When parsing meta syntax in `{}`:\n{}", meta, err))?;
     parse_syntax_data(&rules, file, d)

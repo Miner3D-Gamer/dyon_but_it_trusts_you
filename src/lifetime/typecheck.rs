@@ -43,7 +43,7 @@ mod refine;
 /// The type propagation step uses this assumption without checking the whole `if` expression.
 /// After type propagation, all blocks in the `if` expression should have some type information,
 /// but no further propagation is necessary, so it only need to check for consistency.
-pub(crate) fn run(
+pub fn run(
     nodes: &mut Vec<Node>,
     prelude: &Prelude,
     use_lookup: &UseLookup,
@@ -752,7 +752,7 @@ pub(crate) fn run(
 }
 
 /// Checks all returns recursively in function.
-fn check_fn(
+pub fn check_fn(
     n: usize,
     nodes: &[Node],
     ty: &Type,
@@ -808,7 +808,7 @@ fn check_fn(
     Ok(())
 }
 
-fn check_if(n: usize, nodes: &[Node]) -> Result<(), Range<String>> {
+pub fn check_if(n: usize, nodes: &[Node]) -> Result<(), Range<String>> {
     if let Some(ch) = nodes[n].find_child_by_kind(nodes, Kind::Cond)
         && let Some(ref cond_ty) = nodes[ch].ty
             && !Type::Bool.goes_with(cond_ty) {

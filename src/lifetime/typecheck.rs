@@ -161,8 +161,8 @@ pub(crate) fn run(
                             }
                             if let Some(decl) = nodes[parent].declaration {
                                 let arg = nodes[decl].children[j];
-                                if let (Some(ch_ty), Some(arg_ty)) = (&expr_type, &nodes[arg].ty) {
-                                    if !arg_ty.goes_with(ch_ty) {
+                                if let (Some(ch_ty), Some(arg_ty)) = (&expr_type, &nodes[arg].ty)
+                                    && !arg_ty.goes_with(ch_ty) {
                                         delay_errs.entry(i).or_insert_with(|| nodes[i].source.wrap(format!(
                                                     "Type mismatch (#100):\n\
                                                     Expected `{}`, found `{}`",
@@ -172,7 +172,6 @@ pub(crate) fn run(
                                         todo.push(i);
                                         continue 'node;
                                     }
-                                }
                             } else if let Some(ref alias) = nodes[parent].alias {
                                 use crate::ast::FnAlias;
 

@@ -53,6 +53,16 @@ pub struct Call {
     /// ???
     pub current_len: usize,
 }
+pub(crate) fn clone_tuntime_call(call: &Call) -> Call {
+    Call {
+        fn_name: std::sync::Arc::new(call.fn_name.as_ref().clone()),
+        index: call.index,
+        file: call.file.as_ref().map(|x| Arc::new(x.as_ref().clone())),
+        stack_len: call.stack_len,
+        local_len: call.local_len,
+        current_len: call.current_len,
+    }
+}
 
 lazy_static! {
     pub(crate) static ref TEXT_TYPE: Arc<String> = Arc::new("string".into());
@@ -825,8 +835,10 @@ impl Runtime {
                     return Ok((x, Flow::Return));
                 }
                 _ => {
-                    return self
-                        .err(closure.expr.source_range(), "Expected something");
+                    return self.err(
+                        closure.expr.source_range(),
+                        "Expected something",
+                    );
                 }
             };
 

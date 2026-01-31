@@ -80,16 +80,14 @@ lazy_static! {
     pub static ref OBJECT_TYPE: Arc<String> = Arc::new("object".into());
     pub static ref LINK_TYPE: Arc<String> = Arc::new("link".into());
     pub static ref ARRAY_TYPE: Arc<String> = Arc::new("array".into());
-    pub static ref UNSAFE_REF_TYPE: Arc<String> =
-        Arc::new("unsafe_ref".into());
+    pub static ref UNSAFE_REF_TYPE: Arc<String> = Arc::new("unsafe_ref".into());
     pub static ref REF_TYPE: Arc<String> = Arc::new("ref".into());
     pub static ref RUST_OBJECT_TYPE: Arc<String> =
         Arc::new("rust_object".into());
     pub static ref OPTION_TYPE: Arc<String> = Arc::new("option".into());
     pub static ref RESULT_TYPE: Arc<String> = Arc::new("result".into());
     pub static ref THREAD_TYPE: Arc<String> = Arc::new("thread".into());
-    pub static ref CLOSURE_TYPE: Arc<String> =
-        Arc::new("closure".into());
+    pub static ref CLOSURE_TYPE: Arc<String> = Arc::new("closure".into());
     pub static ref IN_TYPE: Arc<String> = Arc::new("in".into());
     pub static ref MAIN: Arc<String> = Arc::new("main".into());
 }
@@ -1350,7 +1348,7 @@ impl Runtime {
         res
     }
 
-    fn call_void(
+    pub fn call_void(
         &mut self,
         args: &[ast::Expression],
         fun: crate::FnVoidRef,
@@ -1383,7 +1381,7 @@ impl Runtime {
         Ok((None, Flow::Continue))
     }
 
-    fn call_return(
+    pub fn call_return(
         &mut self,
         args: &[ast::Expression],
         fun: crate::FnReturnRef,
@@ -1418,7 +1416,7 @@ impl Runtime {
         ))
     }
 
-    fn call_binop(
+    pub fn call_binop(
         &mut self,
         left_expr: &ast::Expression,
         right_expr: &ast::Expression,
@@ -1473,7 +1471,7 @@ impl Runtime {
         ))
     }
 
-    fn call_unop(
+    pub fn call_unop(
         &mut self,
         expr: &ast::Expression,
         fun: crate::FnUnOpRef,
@@ -1511,7 +1509,7 @@ impl Runtime {
         ))
     }
 
-    fn call_lazy(
+    pub fn call_lazy(
         &mut self,
         args: &[ast::Expression],
         fun: crate::FnReturnRef,
@@ -1593,7 +1591,7 @@ impl Runtime {
         ))
     }
 
-    fn call_loaded(
+    pub fn call_loaded(
         &mut self,
         args: &[ast::Expression],
         f_index: isize,
@@ -1867,7 +1865,11 @@ impl Runtime {
     /// call stack.
     ///
     /// The `loader` flag is set to `true` when called from the outside.
-    fn call_internal(&mut self, call: &ast::Call, loader: bool) -> FlowResult {
+    pub fn call_internal(
+        &mut self,
+        call: &ast::Call,
+        loader: bool,
+    ) -> FlowResult {
         match call.f_index {
             FnIndex::Void(f) => self.call_void(&call.args, f, &call.info),
             FnIndex::Return(f) => self.call_return(&call.args, f, &call.info),

@@ -53,7 +53,13 @@ pub struct Call {
     /// ???
     pub current_len: usize,
 }
-pub(crate) fn clone_tuntime_call(call: &Call) -> Call {
+impl Clone for Call {
+    fn clone(&self) -> Self {
+        clone_tuntime_call(self)
+    }
+}
+/// Clone a runtime [`Call`] instance
+pub fn clone_tuntime_call(call: &Call) -> Call {
     Call {
         fn_name: std::sync::Arc::new(call.fn_name.as_ref().clone()),
         index: call.index,
